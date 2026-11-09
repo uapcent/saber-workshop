@@ -1,0 +1,7 @@
+node_modules
+dist
+# Local editor/agent settings
+.claude/
+# LamaDiLuce's official drawings: their material, kept local only (see README)
+reference/
+*.tsbuildinfo

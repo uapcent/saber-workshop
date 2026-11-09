@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Saber Workshop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Layout: controls column on the left, a lit workbench with both sabers side by side for comparison, parts list underneath. Single dark theme on purpose. */
+  --bg:#0c0d10;
+  --panel:#15171b;
+  --raise:#1d2026;
+  --line:#2a2e35;
+  --text:#ebe8e1;
+  --muted:#9b9ea6;
+  --accent:#cfa955;
+  --ok:#62c393;
+  --warn:#e3a44c;
+  --font-display:"Chakra Petch", "Segoe UI", system-ui, sans-serif;
+  --font-body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 var(--font-body)}
+header{padding:20px 24px 6px;display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px}
+h1{font-family:var(--font-display);font-weight:600;font-size:22px;letter-spacing:.04em;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:13px;max-width:70ch}
+.app{display:grid;grid-template-columns:minmax(300px,370px) 1fr;gap:16px;padding:12px 24px 28px;align-items:start}
+@media (max-width:920px){.app{grid-template-columns:1fr;padding:12px 16px 24px}header{padding:16px 16px 4px}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.tabs{display:flex;gap:6px;padding:6px;border-bottom:1px solid var(--line)}
+.tab{flex:1;padding:8px 10px;border-radius:8px;border:0;background:transparent;color:var(--muted);font:600 13px var(--font-body);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tab.on{background:var(--raise);color:var(--text);box-shadow:inset 0 -2px 0 var(--accent)}
+.sec{padding:12px 14px;border-bottom:1px solid var(--line);display:grid;gap:8px}
+.sec:last-child{border-bottom:0}
+.sec h3{margin:0;font:600 11px var(--font-display);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.row > select{flex:1 1 140px}
+select,input[type=text],textarea{background:var(--raise);color:var(--text);border:1px solid var(--line);border-radius:7px;padding:6px 8px;font:13px var(--font-body);min-width:0}
+textarea{width:100%;resize:vertical;min-height:54px;font-size:12px}
+input[type=text]{width:100%}
+input[type=color]{width:34px;height:31px;border:1px solid var(--line);border-radius:7px;background:var(--raise);padding:2px;cursor:pointer;flex:0 0 auto}
+.btn{background:var(--raise);color:var(--text);border:1px solid var(--line);border-radius:7px;padding:6px 10px;font:500 13px var(--font-body);cursor:pointer}
+.btn:hover{border-color:#454b55}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#1b1407;font-weight:600}
+.btn.ghost{background:transparent}
+.btn.icon{width:31px;padding:6px 0;text-align:center;flex:0 0 auto}
+.btn:disabled{opacity:.4;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.chk{display:flex;gap:6px;align-items:center;cursor:pointer}
+.sw{width:14px;height:14px;border-radius:50%;display:inline-block;border:1px solid rgba(255,255,255,.22);flex:0 0 auto}
+.dot{width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0}
+.dot.on{border-color:var(--text)}
+.status{font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.pill{font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;white-space:nowrap}
+.p-ok{background:rgba(98,195,147,.14);color:var(--ok)}
+.p-out{background:rgba(227,164,76,.14);color:var(--warn)}
+.p-coat{background:rgba(207,169,85,.14);color:var(--accent)}
+.seg{display:flex;gap:4px;flex-wrap:wrap}
+.seg .btn{flex:1 1 auto}
+.seg .btn.on{background:var(--accent);border-color:var(--accent);color:#1b1407;font-weight:600}
+.qty{color:var(--accent);font-weight:600}
+.p-old{background:rgba(155,158,166,.16);color:#c3c6cc}
+.warnline{margin-top:6px;font-size:12px;color:var(--warn);padding:5px 8px;border-left:2px solid var(--warn);background:rgba(227,164,76,.07);border-radius:0 6px 6px 0}
+.lower{display:grid;grid-template-columns:minmax(240px,320px) 1fr;gap:12px;align-items:start}
+@media (max-width:1100px){.lower{grid-template-columns:1fr}}
+.chartbox{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.chartbox h2{margin:0 0 2px;font:600 14px var(--font-display);letter-spacing:.04em}
+.chartbox svg{display:block;width:100%;max-width:340px;height:auto;margin:6px auto 0}
+.lists{grid-template-columns:1fr}
+.ringrow{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:6px;border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.015)}
+.ringrow select{flex:1 1 110px}
+.empty{font-size:12px;color:var(--muted)}
+.stage{display:grid;gap:12px;min-width:0}
+.card{background:radial-gradient(130% 150% at 35% -10%,#262931 0%,#131418 55%,#0f1013 100%);border:1px solid var(--line);border-radius:12px;padding:12px 14px 10px;cursor:pointer;min-width:0}
+.card.on{border-color:rgba(207,169,85,.65)}
+.card-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.card-head b{font:600 15px var(--font-display);letter-spacing:.03em}
+.card-head span{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+.card svg{display:block;width:100%;height:auto;margin-top:4px}
+.lists{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px}
+.list{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-width:0;overflow-x:auto}
+.list h2{margin:0 0 8px;font:600 14px var(--font-display);letter-spacing:.04em}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:6px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font:600 10.5px var(--font-display);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+td.num,th.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+tfoot td{border-bottom:0;font-weight:600}
+.small{font-size:12px;color:var(--muted)}
+a{color:var(--accent)}
+.note{color:var(--muted);font-size:12px;max-width:80ch;margin:0}
+.saved{display:grid;gap:6px}
+.saveditem{display:flex;gap:6px;align-items:center}
+.saveditem span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.toast{font-size:12px;color:var(--ok);min-height:1em}
+@media (prefers-reduced-motion:no-preference){.btn,.tab,.card{transition:border-color .15s,background .15s}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Saber Workshop</h1>
+  <div class="sub">Assemble Polaris swords, dagger pairs and staffs from LamaDiLuce parts or custom coatings, check them against the official length classes, and compare two builds side by side.</div>
+</header>
+
+<div class="app">
+  <aside class="panel">
+    <div class="tabs" id="tabs"></div>
+    <div id="ctl"></div>
+    <div class="sec">
+      <h3>Saved designs</h3>
+      <div class="row"><button class="btn primary" data-act="save" id="saveBtn">Save this saber</button></div>
+      <div class="saved" id="saved"></div>
+      <div class="toast" id="toast"></div>
+    </div>
+    <div class="sec">
+      <h3>Share code</h3>
+      <div class="row">
+        <button class="btn" data-act="copyCode">Copy code for this saber</button>
+      </div>
+      <label class="small" for="codeBox">Paste a code here to load it into the selected saber</label>
+      <textarea id="codeBox" placeholder="Paste a saber code"></textarea>
+      <div class="row"><button class="btn" data-act="loadCode">Load code</button></div>
+    </div>
+  </aside>
+
+  <main class="stage">
+    <div id="cards" class="stage"></div>
+    <div class="lower">
+      <section class="chartbox"><h2>Size chart</h2><div class="small">Polaris length classes, InCom tolerance ±2 mm. A staff (41 to 54 cm) is two hilts joined by a coupler.</div><div id="chart"></div></section>
+      <div class="lists" id="lists"></div>
+    </div>
+    <p class="note">Part outlines: SSe-3, Pommel Adaptor masks and coupler traced from the official Polaris exploded diagram (to scale, about 0.35 mm per pixel); SSe-1, SSe-2, X2, SSe-1/2 emitters and pommels from the official size chart (about 1.4 mm per pixel); EVO emitter, body and pommel measured from LamaDiLuce product photos and fitted to the published lengths (46, 180 and 34 mm visible) and 38 to 39 mm diameters. Parts marked “approx.” are scaled from a related part. Colors approximate the anodized finishes. Prices and stock from lamadiluce.it, 9 Nov 2026. Unofficial planning tool.</p>
+  </main>
+</div>
+
+<script>
+/* ---------- Catalog (lamadiluce.it, 9 Nov 2026) ---------- */
+const FIN = {
+  aluminum:{n:'Aluminum',c:'#c3c7cd',m:1,store:1},
+  dark:{n:'Dark Matter',c:'#202126',store:1,tex:1},
+  stellar:{n:'Stellar Eclipse',c:'#202126',store:1,tex:1,grooves:1},
+  blood:{n:'Blood Moon',c:'#7c1620',store:1},
+  cobalt:{n:'Cobalt Nebula',c:'#1f418f',store:1},
+  viridian:{n:'Viridian Aurora',c:'#146b56',store:1},
+  violet:{n:'Violet Plasma',c:'#4f2a80',store:1},
+  sideral:{n:'Sideral Dust',c:'#585a64',store:1,tex:2},
+  lunar:{n:'Lunar Mist',c:'#a9afba',store:1},
+  solar:{n:'Solar Flare',c:'#de5f1c',store:1},
+  ygg:{n:'Yggdrasil Mantle',c:'#4d4938',store:1,tex:1},
+  cremisi:{n:'Cremisi',c:'#9a1531',store:1},
+  fume:{n:'Fumé',c:'#45464c',store:1},
+  giada:{n:'Giada',c:'#2a8a69',store:1},
+  magma:{n:'Magma',c:'#c5391b',store:1},
+  zaffiro:{n:'Zaffiro',c:'#1d3b95',store:1},
+  white:{n:'White',c:'#eceae5'},
+  bone:{n:'Bone / ivory',c:'#e0d8c3'},
+  gold:{n:'Gold',c:'#c9a144',m:1},
+  brass:{n:'Brass',c:'#b38c3b',m:1},
+  rose:{n:'Rose gold',c:'#c48c78',m:1},
+  bronze:{n:'Bronze',c:'#8c5b31',m:1},
+  gunmetal:{n:'Gunmetal',c:'#3c3f45',m:1},
+  gloss:{n:'Gloss black',c:'#0f0f11',gloss:1}
+};
+// [product id, price €, in stock]
+const CAT = {
+  'emitter.evo':{viridian:[3171,47.5,1],ygg:[2502,47.5,0],violet:[2500,47.5,0],sideral:[2497,47.5,1],lunar:[2495,47.5,0],dark:[2494,47.5,1],cobalt:[2493,47.5,1],blood:[2486,47.5,1],aluminum:[1896,45,1]},
+  'emitter.nxt':{stellar:[4807,80,1],aluminum:[4775,65,1]},
+  'emitter.evo2':{aluminum:[1598,59,1]},
+  'body.evo':{cobalt:[2985,125,1],blood:[2983,125,1],dark:[2987,125,1],ygg:[2994,125,1],viridian:[2993,125,1],sideral:[2989,125,1],violet:[2991,125,1],aluminum:[1900,99,1]},
+  'body.mini':{lunar:[2996,90,1],dark:[2913,90,1],aluminum:[1642,75,1]},
+  'pommel.evo':{blood:[2998,47.5,1],sideral:[3002,47.5,1],dark:[3000,47.5,1],cobalt:[2999,47.5,1],violet:[3004,47.5,0],viridian:[3005,47.5,1],ygg:[3006,47.5,1],aluminum:[1902,45,0],solar:[2563,59,0]},
+  'pommel.mini':{lunar:[3274,40,1],dark:[2918,40,1],aluminum:[1623,35,1]},
+  'pommel.adaptor':{aluminum:[3452,35,1]},
+  'ring.plain':{violet:[2556,18,0],viridian:[2443,18,1],sideral:[2422,18,1],solar:[2380,18,1],lunar:[2359,18,1],dark:[2338,18,1],cobalt:[2233,18,1],blood:[2170,18,1],aluminum:[2149,8,1]},
+  'ring.thin':{magma:[4773,12.5,0],giada:[4771,12.5,1],cremisi:[4766,12.5,1],zaffiro:[4764,12.5,1],fume:[4768,12.5,1],aluminum:[1892,8,1]},
+  'ring.logo':{aluminum:[1633,14.5,1]},
+  'coupler.classic':{aluminum:[2907,20,1]},
+  'coupler.heavy':{aluminum:[3528,20,0]},
+  'coupler.evo':{aluminum:[1504,32.5,1]},
+  'coupler.maori':{aluminum:[5275,55,1]},
+  'ring.tribe':{aluminum:[2924,19.9,1]}
+};
+// Profiles: [x mm along the hilt, radius mm]
+const MODELS = {
+  emitter:{
+    evo:{n:'EVO Emitter',len:46,prof:[[0,19],[10,19],[18,19.4],[28,20.3],[38,21],[44,21],[46,20]]},
+    nxt:{n:'NXT Emitter',len:55,est:1,prof:[[0,19],[11,19],[21,19.6],[34,20.8],[46,21.8],[53,22],[55,21]],vents:[25,49]},
+    evo2:{n:'EVO2 Emitter',len:52,est:1,prof:[[0,19],[13,19],[24,19.6],[37,20.6],[48,21],[52,20]],vents:[24,47]},
+    x2:{n:'X2 Emitter',len:65,legacy:1,prof:[[0,19],[10,19],[12,18],[30,16],[50,18.5],[60,21],[65,21.5]],grooves:[10]},
+    sse1:{n:'SSe-1 Emitter',len:55,legacy:1,prof:[[0,20],[8,19],[25,16.5],[45,18.5],[55,21]],grooves:[6]},
+    sse2:{n:'SSe-2 Emitter',len:55,legacy:1,prof:[[0,19.5],[55,19.5]],grooves:[5,10,15,20,25,30,35,40,45,50]},
+    sse3:{n:'SSe-3 Emitter',len:50,legacy:1,prof:[[0,19],[10,19],[12,19],[50,16]],grooves:[10,40,44]},
+    artiglio:{n:'Artiglio Emitter',len:50,legacy:1,prof:[[0,19],[10,19],[14,18],[35,17.5],[50,19]],grooves:[5,8,10]}
+  },
+  body:{
+    evo:{n:'EVO Main Body',len:180,prof:[[0,19],[14,19],[24,18],[47,17.2],[132,17.2],[153,18.4],[166,19],[180,19]],facets:[24,47,132,153]},
+    mini:{n:'EVO Mini Main Body',len:150,prof:[[0,19],[14,19],[24,18],[45,17.3],[105,17.3],[126,18.4],[136,19],[150,19]],facets:[24,45,105,126]},
+    sse1:{n:'SSe-1 Main Body',len:200,legacy:1,prof:[[0,19],[25,19],[40,18],[95,17.5],[110,18.5],[200,19]],grooves:[120,127,134,141,148,155,162,169,176,183,190]},
+    sse3:{n:'SSe-3 Main Body',len:180,legacy:1,prof:[[0,19],[20,19],[30,18],[80,18],[95,19],[180,19]],facets:[20,95],grooves:[105,112,150,165]},
+    sse2:{n:'SSe-2 Main Body',len:146.5,legacy:1,prof:[[0,19],[20,19],[35,17],[90,17],[110,19],[146.5,19]],grooves:[115,122,129,136]}
+  },
+  pommel:{
+    evo:{n:'EVO Pommel',len:34,prof:[[0,9],[0.7,12.5],[2,15],[4.5,16.6],[10,17.2],[20,17.6],[26,18.6],[30,19],[34,19]],grooves:[16]},
+    mini:{n:'EVO Mini Pommel',len:20,prof:[[0,10],[0.8,13.5],[2,15.6],[5,16.6],[12,17.6],[17,18.8],[20,19]],grooves:[9]},
+    adaptor:{n:'Pommel Adaptor',len:36,est:1,prof:[[0,14],[0.8,17],[2.5,18.4],[36,19]],profX:[[0,21.5],[1,22.5],[4,22],[10,19],[36,19]],grooves:[12,15]},
+    sse1:{n:'SSe-1 Pommel',len:48,legacy:1,prof:[[0,14],[3,18],[10,20],[22,19.5],[34,19],[48,19]],ldl:[39,48]},
+    sse3std:{n:'SSe-3 Pommel (standard mask)',len:30,legacy:1,prof:[[0,18],[2,19.5],[30,19.5]],grooves:[5,8,11,14,17],ldl:[21,30]},
+    sse3extra:{n:'SSe-3 Pommel (extra mask)',len:30,legacy:1,prof:[[0,22],[2,22.5],[8,19],[30,19]],ldl:[21,30]},
+    sse2:{n:'SSe-2 Pommel',len:26,legacy:1,prof:[[0,19.5],[3,20],[16,20],[26,19]],grooves:[4,8,12],ldl:[18,26]}
+  },
+  coupler:{
+    classic:{n:'Polaris Coupler (2019)',len:7,prof:[[0,17.5],[7,17.5]]},
+    heavy:{n:'Polaris Heavy Coupler',len:20,est:1,prof:[[0,18.5],[20,18.5]],grooves:[6,14]},
+    evo:{n:'EVO Coupler',len:70,prof:[[0,19],[8,19],[20,17],[50,17],[62,19],[70,19]],facets:[20,50],holes:1},
+    maori:{n:'EVO Coupler Maori (limited)',len:70,prof:[[0,19],[8,19],[20,17],[50,17],[62,19],[70,19]],facets:[20,50],mark:'tribe'}
+  },
+  ring:{
+    plain:{n:'Plain Ring 10 mm',len:10},
+    thin:{n:'Thin Ring 3.3 mm',len:3.3},
+    logo:{n:'LamaDiLuce Ring',len:10,mark:'star'},
+    tribe:{n:'Ring Tribe',len:10,mark:'tribe'}
+  }
+};
+const PROFILES = {"emitter.evo":[[0,17.62],[6.3,17.79],[9.9,15.96],[14.4,14.23],[20.8,13.39],[26.2,13.79],[30.7,15.01],[32.5,15.76],[36.1,18.67],[38.8,19.46],[40.6,19.43],[42.4,19.06],[46,19.06]],"emitter.evo2":[[0,18.08],[5.4,18.31],[8.1,17.88],[9.9,17.29],[12.6,15.74],[15.3,14.67],[20.8,13.67],[23.4,13.72],[27.1,14.29],[33.4,16.76],[36.1,18.48],[38.8,19.41],[40.6,19.45],[42.4,19.05],[46,19.05]],"emitter.nxt":[[0.0,16.28],[2.1,18.01],[3.2,18.24],[5.3,17.33],[9.4,16.17],[12.5,15.34],[13.6,15.45],[16.7,19.23],[17.8,19.04],[18.8,18.83],[22.0,18.83],[25.1,18.83],[37.7,18.83],[39.7,18.83],[46.0,18.83]],"body.evo":[[0,18.9],[4.8,18.16],[9.6,18.73],[33.6,18.34],[55.2,16.02],[69.6,15.33],[81.6,15.53],[108,17.12],[115.2,16.62],[122.4,16.8],[127.2,16.43],[134.4,16.44],[141.6,15.78],[148.8,16.48],[160.8,16.31],[168,18.89],[175.2,18.53],[180,18.9]],"body.mini":[[0.0,18.9],[4.0,18.16],[8.0,18.73],[28.0,18.34],[46.0,16.02],[58.0,15.33],[68.0,15.53],[90.0,17.12],[96.0,16.62],[102.0,16.8],[106.0,16.43],[112.0,16.44],[118.0,15.78],[124.0,16.48],[134.0,16.31],[140.0,18.89],[146.0,18.53],[150.0,18.9]],"pommel.evo":[[0,11.77],[2,14.08],[4,15.45],[8,17.36],[12,18.41],[15.3,18.87],[20,18.7],[21.3,18.11],[24,15.55],[24.7,15.82],[26.7,18.03],[28,18.7],[30.7,18.94],[34,18.14]],"pommel.mini":[[0.0,11.77],[1.9,14.08],[3.8,15.45],[7.5,17.36],[11.3,18.41],[14.4,18.87],[18.8,18.7],[20.0,18.11]],"pommel.adaptor":[[0.0,13.47],[0.3,14.51],[1.7,15.89],[2.1,15.89],[2.4,16.24],[3.2,16.24],[3.6,16.58],[3.9,16.58],[4.2,16.24],[5.3,16.93],[6.7,16.93],[7.0,17.27],[7.7,17.27],[8.0,17.62],[9.5,17.62],[9.9,17.96],[10.9,18.31],[11.3,18.31],[11.6,17.96],[12.3,17.96],[12.6,18.31],[13.3,18.48],[14.0,18.31],[14.1,19],[20,19]],"pommel.adaptor.extra":[[0.0,19],[1.0,22.45],[2.4,22.97],[3.6,22.97],[4.9,22.45],[6.0,20.38],[8.0,18.31],[8.4,18.31],[8.8,17.96],[9.5,17.96],[9.9,17.62],[12.3,17.62],[12.6,17.96],[13.0,17.96],[14.0,19],[20.0,19]],"body.sse3":[[0.0,19],[21.1,19],[22.9,17.96],[23.5,16.24],[29.2,16.24],[29.5,17.45],[30.6,18.65],[30.9,18.65],[31.2,19],[38.0,19],[38.7,18.65],[41.1,18.65],[41.5,18.31],[44.3,18.31],[44.7,17.96],[47.8,17.96],[48.5,17.62],[52.0,17.62],[52.4,17.27],[53.8,16.75],[54.4,17.27],[101.2,17.27],[102.0,16.58],[103.0,17.27],[104.1,17.62],[107.6,17.62],[108.0,17.96],[111.1,17.96],[111.4,18.31],[114.3,18.31],[115.0,18.65],[117.0,18.65],[117.7,19],[123.4,19],[125.5,17.27],[126.2,16.93],[129.0,16.93],[129.7,17.27],[130.4,17.27],[130.8,17.62],[131.8,17.62],[132.2,17.96],[134.3,18.31],[135.0,18.65],[136.8,18.65],[137.5,17.96],[139.9,16.93],[143.1,16.93],[144.1,17.62],[145.2,17.96],[145.9,18.65],[147.9,18.65],[148.4,18.31],[150.5,17.96],[150.8,17.62],[151.8,17.62],[152.2,17.27],[153.2,17.27],[153.6,16.93],[156.8,16.93],[158.2,18.31],[158.5,18.31],[159.2,19],[179.6,19]],"emitter.sse3":[[0.0,18.83],[0.4,19.0],[0.7,18.65],[2.8,17.96],[3.1,16.93],[3.6,16.58],[4.3,16.58],[4.6,17.62],[5.0,17.96],[5.6,17.96],[7.0,18.48],[13.3,18.48],[14.4,18.31],[14.7,17.96],[15.1,17.96],[15.4,18.31],[16.1,18.31],[17.2,17.96],[17.6,17.62],[19.0,17.62],[19.3,17.27],[20.4,16.93],[21.4,16.93],[22.4,16.58],[22.8,16.24],[23.1,16.58],[23.6,16.58],[23.9,16.24],[24.6,16.24],[24.9,15.89],[25.6,16.06],[26.7,15.89],[27.0,15.55],[28.1,15.72],[29.1,15.55],[29.4,15.2],[30.2,15.2],[30.6,15.55],[31.3,15.55],[32.3,14.85],[32.6,15.2],[34.0,15.2],[34.4,14.85],[35.1,14.85],[35.4,15.2],[35.8,15.2],[36.9,14.85],[37.2,14.51],[37.6,14.51],[37.9,14.85],[39.0,14.85],[40.0,14.16]],"body.sse1":[[0.0,19.0],[11.5,19.0],[12.9,18.3],[14.3,17.61],[20.0,17.61],[21.5,19.0],[35.8,19.0],[37.2,18.3],[41.4,18.3],[42.9,17.61],[55.7,17.61],[57.1,16.91],[80.0,16.91],[81.5,17.61],[94.3,17.61],[95.7,18.3],[98.6,18.3],[100.0,19.0],[108.6,19.0],[110.0,19.8],[111.4,19.8],[112.9,19.0],[115.7,19.0],[117.1,18.3],[118.5,18.3],[120.0,19.0],[124.3,19.0],[125.7,18.3],[127.2,18.3],[128.6,19.0],[134.2,19.0],[135.8,18.3],[137.2,19.0],[142.9,19.0],[144.3,18.3],[145.7,19.0],[151.5,19.0],[152.9,18.3],[154.3,18.3],[155.7,19.0],[160.0,19.0],[161.4,18.3],[162.8,18.3],[164.2,19.0],[167.2,19.0],[168.6,19.8],[170.0,19.0],[171.4,19.8],[172.8,19.0],[174.3,17.61],[180.0,17.61],[181.5,19.0],[200.0,19.0]],"body.sse2":[[0.0,18.3],[1.4,19.8],[25.6,19.8],[27.1,18.3],[28.5,16.91],[29.9,16.91],[31.3,18.3],[32.7,19.8],[34.2,19.8],[35.6,19.0],[37.0,18.3],[46.9,18.3],[48.3,17.61],[49.8,17.61],[51.2,16.91],[83.9,16.91],[85.3,17.61],[86.7,18.3],[98.2,18.3],[99.6,19.0],[101.0,19.8],[113.8,19.8],[115.2,18.3],[118.0,18.3],[119.5,19.8],[123.7,19.8],[125.1,18.3],[126.6,18.3],[128.0,19.0],[129.5,19.8],[145.1,19.8],[146.5,18.3]],"emitter.x2":[[0.0,19.0],[1.5,21.88],[2.9,21.88],[4.3,21.19],[5.7,20.49],[7.0,19.0],[8.4,19.0],[9.9,20.49],[11.3,21.88],[17.0,21.88],[18.4,20.49],[19.8,19.0],[21.1,18.3],[22.5,17.61],[24.0,16.91],[25.4,16.21],[26.8,16.21],[28.2,15.52],[29.6,15.52],[31.0,14.82],[33.9,14.82],[35.2,15.52],[36.6,15.52],[38.0,16.21],[40.9,16.21],[42.3,17.61],[43.7,17.61],[45.1,19.0],[46.5,19.8],[48.0,20.49],[49.3,21.88],[53.5,21.88],[55.0,19.0]],"emitter.sse1":[[0.0,20.49],[1.4,21.19],[4.4,21.19],[5.8,19.8],[8.7,19.8],[10.1,21.19],[11.6,21.19],[13.1,21.88],[14.5,21.88],[15.9,21.19],[17.3,21.19],[18.8,19.8],[20.3,19.0],[21.7,18.3],[23.2,17.61],[24.6,16.91],[26.0,16.21],[27.6,16.21],[29.0,15.52],[30.4,15.52],[31.8,14.82],[34.8,14.82],[36.2,15.52],[37.7,15.52],[39.1,16.21],[40.5,16.21],[41.9,16.91],[43.5,17.61],[44.9,18.3],[46.3,19.0],[47.8,19.8],[49.2,21.19],[50.7,21.88],[52.1,22.58],[53.6,22.58],[55.0,19.0]],"emitter.sse2":[[0.0,19.8],[1.4,20.49],[2.9,20.49],[4.4,19.8],[10.1,19.8],[11.6,20.49],[15.9,20.49],[17.3,19.8],[18.8,19.8],[20.3,18.3],[21.7,18.3],[23.2,17.61],[24.6,16.91],[26.0,16.91],[27.6,15.52],[40.5,15.52],[41.9,16.91],[43.5,16.91],[44.9,17.61],[46.3,18.3],[49.2,19.8],[50.7,20.49],[53.6,20.49],[55.0,19.0]],"emitter.artiglio":[[0.0,19.8],[1.6,19.0],[6.0,19.0],[7.4,18.3],[8.9,17.61],[10.4,19.0],[11.9,19.8],[16.3,19.8],[17.9,19.0],[19.3,19.0],[20.8,18.3],[22.2,17.61],[23.7,16.91],[25.3,16.21],[26.7,15.52],[32.6,15.52],[34.2,16.21],[35.6,16.91],[37.1,17.61],[38.5,18.3],[40.0,18.3]],"pommel.sse1":[[0.0,2.79],[1.4,5.67],[2.9,8.46],[4.4,11.24],[5.8,15.52],[7.2,15.52],[8.7,16.91],[10.1,16.91],[11.6,17.61],[13.0,18.3],[15.9,18.3],[17.3,19.0],[18.7,19.8],[21.7,19.8],[23.1,19.0],[24.6,18.3],[26.0,16.91],[27.5,16.91],[28.9,16.21],[31.8,16.21],[33.2,16.91],[34.7,17.61],[36.2,19.0],[37.6,19.8],[38.0,19.8]],"pommel.sse3std":[[0.0,13.47],[0.3,14.51],[1.7,15.89],[2.1,15.89],[2.4,16.24],[3.2,16.24],[3.6,16.58],[3.9,16.58],[4.2,16.24],[5.3,16.93],[6.7,16.93],[7.0,17.27],[7.7,17.27],[8.0,17.62],[9.5,17.62],[9.9,17.96],[10.9,18.31],[11.3,18.31],[11.6,17.96],[12.3,17.96],[12.6,18.31],[13.3,18.48],[14.0,18.31],[14.1,19],[20,19]],"pommel.sse3extra":[[0.0,19],[1.0,22.45],[2.4,22.97],[3.6,22.97],[4.9,22.45],[6.0,20.38],[8.0,18.31],[8.4,18.31],[8.8,17.96],[9.5,17.96],[9.9,17.62],[12.3,17.62],[12.6,17.96],[13.0,17.96],[14.0,19],[20.0,19]],"pommel.sse2":[[0.0,18.3],[1.4,19.8],[2.9,19.8],[4.4,21.19],[5.8,21.88],[7.3,22.58],[10.2,22.58],[11.7,21.88],[13.1,21.19],[14.6,19.8],[16.0,19.8]]};
+
+const PHOTO_BASED = ['emitter.evo','emitter.evo2','emitter.nxt','body.evo','body.mini','pommel.evo','pommel.mini'];
+const EST_SHAPE = ['emitter.nxt','body.mini','pommel.mini','emitter.evo2'];
+Object.entries(PROFILES).forEach(([key,pts])=>{
+  const [kind,model,variant]=key.split('.');const m=MODELS[kind]&&MODELS[kind][model];if(!m)return;
+  if(variant==='extra'){m.profX=pts;return;}
+  m.prof=pts;m.len=pts[pts.length-1][0];
+  delete m.facets;delete m.grooves;delete m.ldl;
+  m.src=PHOTO_BASED.includes(key)?'photo':'drawing';
+  m.est=EST_SHAPE.includes(key)?1:0;
+});
+const PART_LABEL = {emitter:'Emitter',body:'Main body',pommel:'Pommel',coupler:'Coupler'};
+const STYLES = {sword:{n:'Sword',blade:'Long blade',cls:'long'},dagger:{n:'Daggers (pair)',blade:'Short blade',cls:'short'},staff:{n:'Staff',blade:'Two blades',cls:'staff'}};
+const BLADES = ['#4aa3ff','#3ddc6a','#ff3b30','#a259ff','#f4f4f4','#ffb22e'];
+
+const PRESETS = {
+  yin:{name:'Yin · my EVO Dark Matter',blade:{on:true,color:'#4aa3ff'},emitter:{model:'evo',finish:'dark'},ringsTop:[],body:{model:'evo',finish:'dark'},ringsBottom:[{model:'logo',finish:'aluminum'}],pommel:{model:'evo',finish:'dark'}},
+  yang:{name:'Yang · ivory & gold',blade:{on:true,color:'#f4f4f4'},emitter:{model:'evo',finish:'bone'},ringsTop:[],body:{model:'evo',finish:'bone'},ringsBottom:[{model:'logo',finish:'gold'}],pommel:{model:'evo',finish:'bone'}},
+  redgold:{name:'Blood Moon & gold',blade:{on:true,color:'#ff3b30'},emitter:{model:'evo',finish:'blood'},ringsTop:[{model:'thin',finish:'gold'},{model:'plain',finish:'gold'}],body:{model:'evo',finish:'blood'},ringsBottom:[{model:'plain',finish:'gold'},{model:'thin',finish:'gold'}],pommel:{model:'evo',finish:'blood'}},
+  cobalt:{name:'In stock today · Cobalt & aluminum',blade:{on:true,color:'#4aa3ff'},emitter:{model:'evo',finish:'cobalt'},ringsTop:[{model:'plain',finish:'aluminum'}],body:{model:'evo',finish:'cobalt'},ringsBottom:[{model:'plain',finish:'aluminum'}],pommel:{model:'evo',finish:'cobalt'}},
+  mini:{name:'Daggers · Lunar Mist & Dark Matter',style:'dagger',blade:{on:true,color:'#a259ff'},emitter:{model:'evo',finish:'dark'},ringsTop:[{model:'thin',finish:'fume'}],body:{model:'mini',finish:'lunar'},ringsBottom:[],pommel:{model:'mini',finish:'lunar'}},
+  staff:{name:'Staff · Dark Matter & EVO coupler',style:'staff',coupler:{model:'evo',finish:'aluminum'},blade:{on:true,color:'#3ddc6a'},emitter:{model:'evo',finish:'dark'},ringsTop:[{model:'plain',finish:'aluminum'}],body:{model:'evo',finish:'dark'},ringsBottom:[],pommel:{model:'evo',finish:'dark'}}
+};
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const clone = o => JSON.parse(JSON.stringify(o));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const eur = n => '€' + (Math.round(n*100)/100).toFixed(2).replace('.', ',');
+function rgb(h){h=h.replace('#','');if(h.length===3)h=h.split('').map(c=>c+c).join('');const n=parseInt(h,16);return [n>>16&255,n>>8&255,n&255];}
+function hex(a){return '#'+a.map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');}
+function mix(a,b,t){const x=rgb(a),y=rgb(b);return hex(x.map((v,i)=>v+(y[i]-v)*t));}
+function lum(h){const [r,g,b]=rgb(h);return (0.2126*r+0.7152*g+0.0722*b)/255;}
+function fin(key){
+  if(key && key.startsWith('hex:')){return {n:'Custom '+key.slice(4).toUpperCase(),c:key.slice(4),custom:1};}
+  return FIN[key] || FIN.aluminum;
+}
+function partLen(kind,model){return MODELS[kind][model].len;}
+function status(kind,model,finish){
+  if(MODELS[kind][model].legacy) return {legacy:true};
+  const cat = CAT[kind+'.'+model] || {};
+  const e = cat[finish];
+  if(e) return {store:true,id:e[0],price:e[1],stock:!!e[2]};
+  const base = cat.aluminum;
+  return {store:false,base:base?{id:base[0],price:base[1],stock:!!base[2]}:null};
+}
+function productUrl(id){return 'https://lamadiluce.it/?post_type=product&p='+id;}
+
+/* ---------- state ---------- */
+const KEY='saberWorkshop.v1';
+function readStore(){try{return JSON.parse(localStorage.getItem(KEY))||{};}catch(e){return {};}}
+function writeStore(o){try{localStorage.setItem(KEY,JSON.stringify(o));}catch(e){}}
+const stored = readStore();
+let state = stored.state && Array.isArray(stored.state.sabers) ? stored.state : {active:0,sabers:[clone(PRESETS.yin),clone(PRESETS.yang)]};
+let saved = Array.isArray(stored.saved) ? stored.saved : [];
+const sab = () => state.sabers[state.active];
+function persist(){writeStore({state,saved});}
+function norm(s){if(!s.style)s.style='sword';if(!s.coupler)s.coupler={model:'evo',finish:'aluminum'};if(!s.mask)s.mask='standard';return s;}
+state.sabers.forEach(norm);
+function validSaber(s){return s && s.emitter && s.body && s.pommel && Array.isArray(s.ringsTop) && Array.isArray(s.ringsBottom) && s.blade && MODELS.emitter[s.emitter.model] && MODELS.body[s.body.model] && MODELS.pommel[s.pommel.model];}
+
+/* ---------- SVG rendering ---------- */
+function pathFrom(prof,x0){
+  const top = prof.map(([x,r])=>`${(x0+x).toFixed(2)},${(-r).toFixed(2)}`);
+  const bot = prof.slice().reverse().map(([x,r])=>`${(x0+x).toFixed(2)},${r.toFixed(2)}`);
+  return 'M'+top.join(' L')+' L'+bot.join(' L')+'Z';
+}
+function rAt(prof,x){
+  for(let i=1;i<prof.length;i++){const [x1,r1]=prof[i-1],[x2,r2]=prof[i];if(x<=x2){return r1+(r2-r1)*((x-x1)/(x2-x1||1));}}
+  return prof[prof.length-1][1];
+}
+function ringProf(len){return [[0,18.4],[0.5,19],[len-0.5,19],[len,18.4]];}
+function stops(f){
+  const c=f.c, L=a=>mix(c,'#ffffff',a), D=a=>mix(c,'#000000',a);
+  if(f.m) return [[0,D(.55)],[.1,D(.15)],[.26,L(.62)],[.36,L(.22)],[.56,c],[.8,D(.3)],[1,D(.62)]];
+  if(f.gloss) return [[0,'#000000'],[.17,'#26262a'],[.23,'#9d9da3'],[.29,'#26262a'],[.6,c],[1,'#000000']];
+  if(lum(c)>.6) return [[0,D(.38)],[.2,L(.55)],[.34,L(.22)],[.6,c],[.85,D(.12)],[1,D(.36)]];
+  return [[0,D(.6)],[.18,L(.3)],[.32,L(.12)],[.58,c],[.85,D(.3)],[1,D(.62)]];
+}
+function star(cx,cy,R){
+  let p='';for(let i=0;i<10;i++){const r=i%2?R*0.45:R,a=-Math.PI/2+i*Math.PI/5;p+=(i?'L':'M')+(cx+r*Math.cos(a)).toFixed(2)+','+(cy+r*Math.sin(a)).toFixed(2);}return p+'Z';
+}
+function drawPart(ctx,kind,model,finishKey,x0,blade){
+  const m = MODELS[kind][model];
+  const prof = kind==='ring' ? ringProf(m.len) : (ctx.mask==='extra'&&m.profX ? m.profX : m.prof);
+  const d = pathFrom(prof,x0);
+  const f = fin(finishKey);
+  const gid = ctx.p+'g'+finishKey.replace(/[^a-z0-9]/gi,'');
+  ctx.grads.set(gid,f);
+  let s = `<path d="${d}" fill="url(#${gid})" stroke="rgba(0,0,0,.5)" stroke-width=".35" stroke-linejoin="round"/>`;
+  if(f.tex){
+    const cid = ctx.p+'c'+(ctx.n++);
+    ctx.defs.push(`<clipPath id="${cid}"><path d="${d}"/></clipPath>`);
+    s += `<g clip-path="url(#${cid})"><rect x="${x0}" y="-24" width="${m.len}" height="48" filter="url(#${ctx.p}${f.tex===2?'sp':'nz'})" opacity="${f.tex===2?0.9:0.55}"/></g>`;
+  }
+  const edge = (x,dark,light)=>{const r=rAt(prof,x)-0.2;return `<line x1="${x0+x}" y1="${-r}" x2="${x0+x}" y2="${r}" stroke="${dark}" stroke-width=".45"/><line x1="${x0+x+0.5}" y1="${-r}" x2="${x0+x+0.5}" y2="${r}" stroke="${light}" stroke-width=".35"/>`;};
+  (m.facets||[]).forEach(x=>{s+=edge(x,'rgba(0,0,0,.38)','rgba(255,255,255,.10)');});
+  (m.grooves||[]).forEach(x=>{s+=edge(x,'rgba(0,0,0,.6)','rgba(255,255,255,.14)');});
+  if(m.vents){
+    const [a,b]=m.vents, glow = blade.on ? blade.color : '#0a0a0c';
+    [-11,-1.1,8.8].forEach(y=>{
+      s+=`<rect x="${x0+a}" y="${y}" width="${b-a}" height="2.3" rx="1.15" fill="#050506"/>`;
+      if(blade.on) s+=`<rect x="${x0+a+0.6}" y="${y+0.4}" width="${b-a-1.2}" height="1.5" rx=".75" fill="${mix(glow,'#ffffff',.45)}" opacity=".95"/>`;
+    });
+  }
+  if(f.grooves){
+    [-13,13].forEach(y=>{s+=`<line x1="${x0+6}" y1="${y}" x2="${x0+m.len-5}" y2="${y}" stroke="#dfe2e7" stroke-width=".8" stroke-linecap="round" opacity=".9"/>`;});
+  }
+  if(m.holes){for(let x=24;x<=46;x+=5.5){[-8,0,8].forEach(yy=>{s+=`<ellipse cx="${x0+x}" cy="${yy}" rx="1.6" ry="2.6" fill="#060607" opacity=".85"/>`;});}}
+  if(m.ldl){
+    const [a,b]=m.ldl,cid=ctx.p+'c'+(ctx.n++);
+    ctx.defs.push(`<clipPath id="${cid}"><path d="${d}"/></clipPath>`);
+    s+=`<g clip-path="url(#${cid})"><rect x="${x0+a}" y="-25" width="${b-a}" height="50" fill="#111114"/><rect x="${x0+a}" y="-25" width="${b-a}" height="9" fill="#ffffff" opacity=".07"/></g><path d="${star(x0+(a+b)/2,0,3)}" fill="#e9e9ee" opacity=".85"/>`;
+  }
+  if(m.mark==='star'){
+    s+=`<path d="${star(x0+m.len/2,0,3.4)}" fill="${lum(f.c)>.5?mix(f.c,'#000000',.45):mix(f.c,'#ffffff',.55)}" opacity=".85"/>`;
+  }
+  if(m.mark==='tribe'){
+    let pts=[];for(let y=-17,i=0;y<=17;y+=3.4,i++){pts.push(`${(x0+(i%2?m.len-2:2)).toFixed(2)},${y.toFixed(2)}`);}
+    s+=`<polyline points="${pts.join(' ')}" fill="none" stroke="${mix(f.c,'#000000',.55)}" stroke-width=".7" stroke-linejoin="round" opacity=".8"/>`;
+  }
+  return s;
+}
+function bladeSVG(p,c,on,x,BL){
+  if(on) return `<g filter="url(#${p}bg)"><rect x="${x-1}" y="-14" width="${BL+2}" height="28" rx="14" fill="${c}" opacity=".85"/></g>
+      <rect x="${x}" y="-10" width="${BL}" height="20" rx="10" fill="${mix(c,'#ffffff',.5)}"/>
+      <rect x="${x+2.5}" y="-5.5" width="${BL-5}" height="11" rx="5.5" fill="#ffffff" opacity=".9"/>`;
+  return `<rect x="${x}" y="-12" width="${BL}" height="24" rx="12" fill="url(#${p}off)" stroke="rgba(255,255,255,.18)" stroke-width=".4"/>`;
+}
+function hiltSeq(s,withPommel){
+  return [...(withPommel?[['pommel',s.pommel.model,s.pommel.finish]]:[]),
+    ...s.ringsBottom.slice().reverse().map(r=>['ring',r.model,r.finish]),
+    ['body',s.body.model,s.body.finish],
+    ...s.ringsTop.slice().reverse().map(r=>['ring',r.model,r.finish]),
+    ['emitter',s.emitter.model,s.emitter.finish]];
+}
+function renderSaberSVG(s,p,chart){
+  const bl = chart ? {on:false,color:s.blade.color} : s.blade;
+  const ctx={p,defs:[],grads:new Map(),n:0,mask:s.mask};
+  const staff = s.style==='staff';
+  let x=0, half='';
+  hiltSeq(s,!staff).forEach(([k,m,f])=>{half+=drawPart(ctx,k,m,f,x,bl);x+=partLen(k,m);});
+  const H=x;
+  let parts, total, blade='', minX, maxX;
+  if(staff){
+    const cl=partLen('coupler',s.coupler.model);
+    const cp=drawPart(ctx,'coupler',s.coupler.model,s.coupler.finish,0,bl);
+    total=2*H+cl;
+    parts=`<g transform="translate(${H},0) scale(-1,1)">${half}</g><g transform="translate(${H},0)">${cp}</g><g transform="translate(${H+cl},0)">${half}</g>`;
+    const BL=250;
+    blade=bladeSVG(p,s.blade.color,s.blade.on,total-3,BL)+bladeSVG(p,s.blade.color,s.blade.on,3-BL,BL);
+    minX=3-BL-14; maxX=total+BL+11;
+  } else {
+    total=H; parts=half;
+    const BL = s.style==='dagger' ? 210 : 330;
+    blade=bladeSVG(p,s.blade.color,s.blade.on,H-3,BL);
+    minX=-14; maxX=H+BL+11;
+  }
+  let defs='';
+  ctx.grads.forEach((f,id)=>{defs+=`<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">${stops(f).map(([o,c])=>`<stop offset="${o}" stop-color="${c}"/>`).join('')}</linearGradient>`;});
+  defs+=`<filter id="${p}nz" x="0" y="0" width="1" height="1"><feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="2" seed="4"/><feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  .9 0 0 0 -.38"/></filter>
+    <filter id="${p}sp" x="0" y="0" width="1" height="1"><feTurbulence type="fractalNoise" baseFrequency="2.4" numOctaves="1" seed="9"/><feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  4 0 0 0 -2.35"/></filter>
+    <filter id="${p}bg" x="-10%" y="-150%" width="120%" height="400%"><feGaussianBlur stdDeviation="6"/></filter>
+    <filter id="${p}sh" x="-10%" y="-300%" width="120%" height="700%"><feGaussianBlur stdDeviation="2.6"/></filter>
+    <linearGradient id="${p}off" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".05"/><stop offset=".25" stop-color="#ffffff" stop-opacity=".22"/><stop offset=".6" stop-color="#ffffff" stop-opacity=".08"/><stop offset="1" stop-color="#ffffff" stop-opacity=".03"/></linearGradient>`;
+  defs+=ctx.defs.join('');
+  const one=`<ellipse cx="${total/2}" cy="31" rx="${total/2}" ry="2.4" fill="#000" opacity=".55" filter="url(#${p}sh)"/>${blade}${parts}`;
+  const W=maxX-minX;
+  const svg = s.style==='dagger'
+    ? `<svg viewBox="${minX} -78 ${W} 156" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(s.name)}, pair of daggers"><defs>${defs}</defs><g transform="translate(0,-37)">${one}</g><g transform="translate(0,37)">${one}</g></svg>`
+    : `<svg viewBox="${minX} -40 ${W} 80" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(s.name)}"><defs>${defs}</defs>${one}</svg>`;
+  return {svg,hilt:total,defs,parts};
+}
+
+/* ---------- totals ---------- */
+function rows(s){
+  const q = s.style==='sword' ? 1 : 2, staff=s.style==='staff';
+  const r=[];
+  r.push({label:PART_LABEL.emitter,kind:'emitter',model:s.emitter.model,finish:s.emitter.finish,q});
+  s.ringsTop.forEach(x=>r.push({label:'Ring (emitter side)',kind:'ring',model:x.model,finish:x.finish,q}));
+  r.push({label:PART_LABEL.body,kind:'body',model:s.body.model,finish:s.body.finish,q});
+  s.ringsBottom.forEach(x=>r.push({label:staff?'Ring (coupler side)':'Ring (pommel side)',kind:'ring',model:x.model,finish:x.finish,q}));
+  if(staff) r.push({label:PART_LABEL.coupler,kind:'coupler',model:s.coupler.model,finish:s.coupler.finish,q:1});
+  else r.push({label:PART_LABEL.pommel+(s.pommel.model==='adaptor'?(s.mask==='extra'?' · extra mask':' · standard mask'):''),kind:'pommel',model:s.pommel.model,finish:s.pommel.finish,q});
+  r.forEach(x=>{x.st=status(x.kind,x.model,x.finish);x.len=partLen(x.kind,x.model);});
+  return r;
+}
+function totals(s){
+  const r=rows(s);let store=0,base=0,coat=0,out=0,old=0;
+  r.forEach(x=>{if(x.st.legacy){old+=x.q;return;}if(x.st.store){store+=x.st.price*x.q;if(!x.st.stock)out+=x.q;}else{coat+=x.q;if(x.st.base)base+=x.st.base.price*x.q;}});
+  let half=0;r.forEach(x=>{if(x.kind!=='coupler'&&x.kind!=='pommel')half+=x.len;});
+  const len = s.style==='staff' ? 2*half+partLen('coupler',s.coupler.model) : half+partLen('pommel',s.pommel.model);
+  return {r,store,base,coat,out,len,old};
+}
+
+/* ---------- UI ---------- */
+function statusHTML(st){
+  if(st.legacy) return `<span class="pill p-old">Discontinued</span><span>Not in the store. Use it if you already own one.</span>`;
+  if(st.store) return st.stock ? `<span class="pill p-ok">In stock</span><span>${eur(st.price)}</span>` : `<span class="pill p-out">Out of stock</span><span>${eur(st.price)}</span>`;
+  if(st.base) return `<span class="pill p-coat">Coat it</span><span>Not sold in this finish. Base part in aluminum ${eur(st.base.price)}${st.base.stock?'':' (out of stock)'}</span>`;
+  return `<span class="pill p-coat">Coat it</span><span>Not sold in this finish</span>`;
+}
+function finishSelect(kind,model,cur,attrs,id){
+  const cat=CAT[kind+'.'+model]||{};
+  const sold=Object.keys(cat);
+  const isHex=cur.startsWith('hex:');
+  const opt=(v,l)=>`<option value="${v}"${(v===cur||(v==='hex'&&isHex))?' selected':''}>${esc(l)}</option>`;
+  let h=`<span class="sw" style="background:${fin(cur).c}"></span><select id="${id}" ${attrs} aria-label="Finish">`;
+  h+=`<optgroup label="Sold for this part">${sold.map(k=>opt(k,`${FIN[k].n} · ${eur(cat[k][1])}${cat[k][2]?'':' · out of stock'}`)).join('')}</optgroup>`;
+  const other=Object.keys(FIN).filter(k=>FIN[k].store&&!cat[k]);
+  if(other.length) h+=`<optgroup label="Store colors, not sold for this part">${other.map(k=>opt(k,FIN[k].n)).join('')}</optgroup>`;
+  h+=`<optgroup label="Custom coating">${Object.keys(FIN).filter(k=>!FIN[k].store).map(k=>opt(k,FIN[k].n)).join('')}${opt('hex','Custom color…')}</optgroup></select>`;
+  if(isHex) h+=`<input type="color" ${attrs} data-hex="1" value="${cur.slice(4)}" aria-label="Custom color">`;
+  return h;
+}
+function modelSelect(kind,cur,attrs,id){
+  const all=Object.entries(MODELS[kind]);
+  const o=([k,m])=>`<option value="${k}"${k===cur?' selected':''}>${esc(m.n)} · ${(m.len/10).toLocaleString('en',{maximumFractionDigits:2})} cm${m.est?' (approx.)':''}</option>`;
+  const cur_=all.filter(([,m])=>!m.legacy), old=all.filter(([,m])=>m.legacy);
+  if(!old.length) return `<select id="${id}" ${attrs} aria-label="Model">${cur_.map(o).join('')}</select>`;
+  return `<select id="${id}" ${attrs} aria-label="Model"><optgroup label="Current (EVO)">${cur_.map(o).join('')}</optgroup><optgroup label="Legacy (SSe, X2, Artiglio)">${old.map(o).join('')}</optgroup></select>`;
+}
+function warnings(s){
+  const w=[];
+  if(['sse1','sse2'].includes(s.body.model)){
+    if(['sse3','artiglio'].includes(s.emitter.model)&&!s.ringsTop.length) w.push(`The ${MODELS.body[s.body.model].n} needs an extra ring under the ${MODELS.emitter[s.emitter.model].n}.`);
+    if(['sse3std','sse3extra'].includes(s.pommel.model)&&!s.ringsBottom.length) w.push(`The ${MODELS.body[s.body.model].n} needs an extra ring above the ${MODELS.pommel[s.pommel.model].n}.`);
+  }
+  const c=lenClass(totals(s).len,s.style);
+  if(c.bad) w.push(c.text);
+  return w;
+}
+function classOf(mm){
+  if(mm<178) return 'Under 18 cm';
+  if(mm<258) return 'Short';
+  if(mm<=262) return 'Short or Long';
+  if(mm<=322) return 'Long';
+  if(mm<408) return 'Between Long and Staff';
+  if(mm<=542) return 'Staff';
+  return 'Over 54 cm';
+}
+function lenClass(mm,style){
+  const name=classOf(mm), cm=(mm/10).toFixed(1);
+  const ok={sword:['Long','Short or Long'],dagger:['Short','Short or Long'],staff:['Staff']}[style||'sword'];
+  if(ok.includes(name)) return {name};
+  const want={sword:'Long class (26 to 32 cm)',dagger:'Short class (18 to 26 cm)',staff:'Staff class (41 to 54 cm)'}[style||'sword'];
+  return {name,bad:1,text:`At ${cm} cm this build is outside the ${want} for a ${STYLES[style||'sword'].n.toLowerCase().replace(' (pair)','')}.`};
+}
+function partSec(k){
+  const s=sab(),p=s[k];
+  let mask='';
+  if(k==='pommel'&&p.model==='adaptor') mask=`<div class="row"><select id="maskSel" data-mask="1" aria-label="Pommel mask"><option value="standard"${s.mask!=='extra'?' selected':''}>Standard pommel mask</option><option value="extra"${s.mask==='extra'?' selected':''}>Extra pommel mask (flared)</option></select></div>`;
+  return `<div class="sec"><h3>${PART_LABEL[k]}</h3>
+    <div class="row">${modelSelect(k,p.model,`data-part="${k}" data-f="model"`,`m-${k}`)}</div>${mask}
+    <div class="row">${finishSelect(k,p.model,p.finish,`data-part="${k}" data-f="finish"`,`f-${k}`)}</div>
+    <div class="status">${statusHTML(status(k,p.model,p.finish))}</div></div>`;
+}
+function ringSec(slot,title){
+  const list=sab()[slot];
+  const items=list.map((r,i)=>`<div class="ringrow">
+      ${modelSelect('ring',r.model,`data-slot="${slot}" data-i="${i}" data-f="model"`,`rm-${slot}-${i}`)}
+      <button class="btn icon" data-act="delRing" data-slot="${slot}" data-i="${i}" aria-label="Remove ring">✕</button>
+      <div class="row" style="flex:1 1 100%">${finishSelect('ring',r.model,r.finish,`data-slot="${slot}" data-i="${i}" data-f="finish"`,`rf-${slot}-${i}`)}</div>
+      <div class="status" style="flex:1 1 100%">${statusHTML(status('ring',r.model,r.finish))}</div>
+    </div>`).join('');
+  return `<div class="sec"><h3>${title}</h3>${items||'<div class="empty">No rings here.</div>'}
+    <div class="row"><button class="btn ghost" data-act="addRing" data-slot="${slot}" ${list.length>=6?'disabled':''}>+ Add ring</button></div></div>`;
+}
+function renderTabs(){
+  $('#tabs').innerHTML=state.sabers.map((s,i)=>`<button class="tab${i===state.active?' on':''}" data-tab="${i}">${'AB'[i]} · ${esc(s.name)}</button>`).join('');
+}
+function renderControls(){
+  const s=sab(),o='AB'[1-state.active];
+  $('#ctl').innerHTML=`
+  <div class="sec"><h3>Name</h3><input type="text" id="nameIn" data-name="1" value="${esc(s.name)}" maxlength="60"></div>
+  <div class="sec"><h3>Start from</h3>
+    <div class="row"><select id="presetSel" data-preset="1" aria-label="Preset"><option value="">Load a preset…</option>${Object.entries(PRESETS).map(([k,p])=>`<option value="${k}">${esc(p.name)}</option>`).join('')}</select></div>
+    <div class="row"><button class="btn" data-act="copyOther">Copy saber ${o} here</button><button class="btn" data-act="swap">Swap A and B</button></div></div>
+  <div class="sec"><h3>Style</h3>
+    <div class="seg" role="group" aria-label="Saber style">${Object.entries(STYLES).map(([k,v])=>`<button class="btn${s.style===k?' on':''}" data-act="style" data-v="${k}" aria-pressed="${s.style===k}">${v.n}</button>`).join('')}</div>
+    <div class="small">${{sword:'One hilt, one long blade.',dagger:'Two identical short hilts, one in each hand. Prices count both.',staff:'Two hilts joined by a coupler, with a blade at each end. The coupler replaces both pommels. Prices count both halves.'}[s.style]}</div></div>
+  <div class="sec"><h3>Blade · ${STYLES[s.style].blade}</h3>
+    <div class="row"><label class="chk" for="bladeOn"><input type="checkbox" id="bladeOn" data-blade-on="1"${s.blade.on?' checked':''}> Ignited</label></div>
+    <div class="row">${BLADES.map(c=>`<button class="dot${c===s.blade.color?' on':''}" style="background:${c}" data-act="blade" data-c="${c}" aria-label="Blade color ${c}"></button>`).join('')}<input type="color" id="bladeColor" data-blade-color="1" value="${s.blade.color}" aria-label="Custom blade color"></div></div>
+  ${partSec('emitter')}
+  ${ringSec('ringsTop','Rings between emitter and body')}
+  ${partSec('body')}
+  ${ringSec('ringsBottom',s.style==='staff'?'Rings between body and coupler':'Rings between body and pommel')}
+  ${s.style==='staff'?partSec('coupler'):partSec('pommel')}`;
+}
+function renderStage(){
+  $('#cards').innerHTML=state.sabers.map((s,i)=>{
+    const {svg}=renderSaberSVG(s,'s'+i+'_');const t=totals(s);
+    const bits=[STYLES[s.style].n,`${(t.len/10).toFixed(1)} cm · ${lenClass(t.len,s.style).name}`,`${eur(t.store)} in store parts`];
+    if(t.coat) bits.push(`${t.coat} part${t.coat>1?'s':''} to coat`);
+    if(t.old) bits.push(`${t.old} discontinued`);
+    if(t.out) bits.push(`${t.out} out of stock`);
+    const w=warnings(s);
+    return `<div class="card${i===state.active?' on':''}" data-card="${i}"><div class="card-head"><b>${'AB'[i]} · ${esc(s.name)}</b><span>${bits.join(' · ')}</span></div>${svg}${w.map(x=>`<div class="warnline">${esc(x)}</div>`).join('')}</div>`;
+  }).join('');
+  renderChart();
+}
+function renderChart(){
+  const anyStaff=state.sabers.some(x=>x.style==='staff');
+  const top=anyStaff?560:340, n=state.sabers.length, col=96, ax=62, W=ax+n*col+14, base=top+18, H=base+32;
+  const y=mm=>base-mm;
+  let g='',defs='';
+  const band=(a,b,op,label)=>{g+=`<rect x="${ax-4}" y="${y(b)}" width="${W-ax-6}" height="${b-a}" fill="#ffffff" opacity="${op}"/><text transform="translate(${ax-10},${y((a+b)/2)}) rotate(-90)" text-anchor="middle" class="cb">${label}</text>`;};
+  band(180,260,.04,'SHORT');band(260,320,.07,'LONG');
+  const marks=[180,260,320];
+  if(anyStaff){band(410,540,.05,'STAFF');marks.push(410,540);}
+  marks.forEach(v=>{g+=`<line x1="${ax-4}" x2="${W-10}" y1="${y(v)}" y2="${y(v)}" stroke="#9b9ea6" stroke-width=".6" stroke-dasharray="3 3" opacity=".7"/><text x="${W-10}" y="${y(v)-2.5}" text-anchor="end" class="ct">${v/10} cm</text>`;});
+  for(let mm=0;mm<=top;mm+=10){const big=mm%50===0;g+=`<line x1="${ax-26}" x2="${ax-26+(big?7:4)}" y1="${y(mm)}" y2="${y(mm)}" stroke="#6d717a" stroke-width=".6"/>`;if(big)g+=`<text x="${ax-30}" y="${y(mm)+2.6}" text-anchor="end" class="ct">${mm/10}</text>`;}
+  g+=`<line x1="${ax-26}" x2="${ax-26}" y1="${y(0)}" y2="${y(top)}" stroke="#6d717a" stroke-width=".6"/>`;
+  g+=`<line x1="${ax-4}" x2="${W-10}" y1="${base}" y2="${base}" stroke="#6d717a" stroke-width=".8"/>`;
+  state.sabers.forEach((s,i)=>{
+    const r=renderSaberSVG(s,'k'+i+'_',true), t=totals(s), cx=ax+i*col+col/2;
+    defs+=r.defs;
+    g+=`<g transform="translate(${cx},${base}) rotate(-90)">${r.parts}</g>`;
+    g+=`<line x1="${cx-24}" x2="${cx+24}" y1="${y(t.len)}" y2="${y(t.len)}" stroke="#cfa955" stroke-width=".8"/>`;
+    g+=`<text x="${cx}" y="${y(t.len)-4}" text-anchor="middle" class="cv">${(t.len/10).toFixed(1)} cm</text>`;
+    g+=`<text x="${cx}" y="${base+13}" text-anchor="middle" class="cn">${'AB'[i]}${s.style==='dagger'?' ×2':''}</text><text x="${cx}" y="${base+24}" text-anchor="middle" class="ct">${lenClass(t.len,s.style).name}</text>`;
+  });
+  $('#chart').innerHTML=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Hilt lengths against the Polaris length classes"><style>.ct{font:7px var(--font-body);fill:#9b9ea6}.cb{font:600 8px var(--font-display);letter-spacing:.14em;fill:#c9cbd0}.cv{font:600 7.5px var(--font-body);fill:#cfa955}.cn{font:600 9px var(--font-display);fill:#ebe8e1}</style><defs>${defs}</defs>${g}</svg>`;
+}
+function renderLists(){
+  $('#lists').innerHTML=state.sabers.map((s,i)=>{
+    const t=totals(s);
+    const body=t.r.map(x=>{
+      const f=fin(x.finish),name=MODELS[x.kind][x.model].n;
+      let st,price,link='';
+      if(x.st.legacy){st='<span class="pill p-old">Discontinued</span>';price='–';}
+      else if(x.st.store){st=x.st.stock?'<span class="pill p-ok">In stock</span>':'<span class="pill p-out">Out of stock</span>';price=eur(x.st.price*x.q);link=` <a href="${productUrl(x.st.id)}" target="_blank" rel="noopener">view</a>`;}
+      else{st='<span class="pill p-coat">Coat it</span>';price=x.st.base?`<span class="small">base ${eur(x.st.base.price*x.q)}</span>`:'–';if(x.st.base)link=` <a href="${productUrl(x.st.base.id)}" target="_blank" rel="noopener">base part</a>`;}
+      return `<tr><td>${esc(name)}${x.q>1?` <b class="qty">×${x.q}</b>`:''}<div class="small">${x.label}</div></td><td><span class="sw" style="background:${f.c};vertical-align:-2px"></span> ${esc(f.n)}</td><td>${st}${link}</td><td class="num">${price}</td></tr>`;
+    }).join('');
+    let foot=`<tr><td colspan="3">Store parts</td><td class="num">${eur(t.store)}</td></tr>`;
+    if(t.coat) foot+=`<tr><td colspan="3">Aluminum bases to coat (${t.coat}), coating cost not included</td><td class="num">${eur(t.base)}</td></tr>`;
+    return `<section class="list"><h2>${'AB'[i]} · ${esc(s.name)}</h2><table><thead><tr><th>Part</th><th>Finish</th><th>Status</th><th class="num">Price</th></tr></thead><tbody>${body}</tbody><tfoot>${foot}</tfoot></table><p class="small" style="margin:8px 0 0">Not included: Anima core (LED, speaker, battery, USB switch), lens, blade${s.style==='sword'?'':'s'}, screws, weight disk and weights.</p></section>`;
+  }).join('');
+}
+function renderSaved(){
+  $('#saved').innerHTML = saved.length ? saved.map((d,i)=>`<div class="saveditem"><span title="${esc(d.name)}">${esc(d.name)}</span><button class="btn" data-act="loadSaved" data-i="${i}">Load</button><button class="btn icon" data-act="delSaved" data-i="${i}" aria-label="Delete saved design">✕</button></div>`).join('') : '<div class="empty">Nothing saved yet. Designs stay in this browser.</div>';
+}
+function toast(msg){$('#toast').textContent=msg;clearTimeout(toast.t);toast.t=setTimeout(()=>$('#toast').textContent='',2600);}
+function renderAll(){renderTabs();renderControls();renderStage();renderLists();renderSaved();persist();}
+function renderLive(){renderTabs();renderStage();renderLists();persist();}
+
+/* ---------- events ---------- */
+document.addEventListener('change',e=>{
+  const t=e.target,s=sab();
+  if(t.dataset.preset!==undefined){if(t.value){state.sabers[state.active]=norm(clone(PRESETS[t.value]));}renderAll();return;}
+  if(t.dataset.mask){s.mask=t.value;renderAll();return;}
+  if(t.dataset.bladeOn!==undefined){s.blade.on=t.checked;renderAll();return;}
+  if(t.dataset.hex || t.dataset.bladeColor) {renderAll();return;}
+  if(t.dataset.f){
+    const target = t.dataset.part ? s[t.dataset.part] : s[t.dataset.slot][+t.dataset.i];
+    if(t.dataset.f==='model') target.model=t.value;
+    else if(t.value==='hex') target.finish='hex:'+(target.finish.startsWith('hex:')?target.finish.slice(4):fin(target.finish).c);
+    else target.finish=t.value;
+    renderAll();
+  }
+});
+document.addEventListener('input',e=>{
+  const t=e.target,s=sab();
+  if(t.dataset.name){s.name=t.value||'Untitled';renderLive();return;}
+  if(t.dataset.bladeColor){s.blade.color=t.value;s.blade.on=true;renderLive();return;}
+  if(t.dataset.hex){
+    const target = t.dataset.part ? s[t.dataset.part] : s[t.dataset.slot][+t.dataset.i];
+    target.finish='hex:'+t.value;
+    const sw=t.parentElement.querySelector('.sw');if(sw)sw.style.background=t.value;
+    renderLive();
+  }
+});
+document.addEventListener('click',e=>{
+  const card=e.target.closest('[data-card]');
+  if(card){state.active=+card.dataset.card;renderAll();return;}
+  const tab=e.target.closest('[data-tab]');
+  if(tab){state.active=+tab.dataset.tab;renderAll();return;}
+  const b=e.target.closest('[data-act]');if(!b)return;
+  const s=sab(),a=b.dataset.act;
+  if(a==='addRing'){const l=s[b.dataset.slot];const last=l[l.length-1];l.push(last?clone(last):{model:'plain',finish:'aluminum'});renderAll();}
+  else if(a==='delRing'){s[b.dataset.slot].splice(+b.dataset.i,1);renderAll();}
+  else if(a==='style'){s.style=b.dataset.v;renderAll();}
+  else if(a==='blade'){s.blade.color=b.dataset.c;s.blade.on=true;renderAll();}
+  else if(a==='copyOther'){const keep=s.name;state.sabers[state.active]=clone(state.sabers[1-state.active]);state.sabers[state.active].name=keep;renderAll();}
+  else if(a==='swap'){state.sabers.reverse();state.active=1-state.active;renderAll();}
+  else if(a==='save'){saved.unshift({name:s.name,saber:clone(s)});saved=saved.slice(0,30);renderAll();toast('Saved “'+s.name+'”.');}
+  else if(a==='loadSaved'){const d=saved[+b.dataset.i];if(d&&validSaber(d.saber)){state.sabers[state.active]=norm(clone(d.saber));renderAll();toast('Loaded into saber '+'AB'[state.active]+'.');}}
+  else if(a==='delSaved'){saved.splice(+b.dataset.i,1);renderAll();}
+  else if(a==='copyCode'){
+    const code=btoa(unescape(encodeURIComponent(JSON.stringify(s))));
+    $('#codeBox').value=code;
+    if(navigator.clipboard){navigator.clipboard.writeText(code).then(()=>toast('Code copied to the clipboard.'),()=>toast('Code is in the box below. Copy it from there.'));}
+    else toast('Code is in the box below. Copy it from there.');
+  }
+  else if(a==='loadCode'){
+    try{const o=JSON.parse(decodeURIComponent(escape(atob($('#codeBox').value.trim()))));if(!validSaber(o))throw 0;state.sabers[state.active]=norm(o);renderAll();toast('Code loaded into saber '+'AB'[state.active]+'.');}
+    catch(err){toast('That code could not be read. Copy the whole code and try again.');}
+  }
+});
+
+renderAll();
+</script>
+</body>
+</html>
