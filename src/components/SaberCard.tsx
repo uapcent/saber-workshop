@@ -36,7 +36,10 @@ export function SaberCard({ saber, totals: t, interaction }: Props) {
             {w}
           </div>
         ))}
-        <div className="hint">Click a part of the hilt to edit it.</div>
+        <div className="hint">
+          <span className="hint-mouse">Click a part of the hilt to edit it.</span>
+          <span className="hint-touch">Tap a part of the hilt to edit it.</span>
+        </div>
       </div>
     </div>
   );

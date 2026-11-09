@@ -64,7 +64,7 @@ h3 { margin: 0 0 2px; font: 600 13px var(--font-display); letter-spacing: .04em;
 
 /* ---------- Page layout ---------- */
 .app { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 16px; padding: 16px 24px 28px; align-items: start; }
-.stage { display: grid; gap: 16px; min-width: 0; }
+.stage { display: grid; gap: 16px; min-width: 0; container-type: inline-size; }
 .pinned {
   position: sticky; top: var(--topbar); z-index: 10; margin-top: -16px; padding: 16px 0 6px;
   background: var(--bg); box-shadow: 0 12px 14px -10px var(--bg);
@@ -285,3 +285,79 @@ tfoot td { border-bottom: 0; font-weight: 600; }
 .finish-list .finish-option.on { background: rgba(207, 169, 85, .14); border-color: rgba(207, 169, 85, .4); }
 .finish-group { padding: 6px 6px 2px; font: 600 10px var(--font-display); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
 .finish-option .sw, .finish-trigger .sw { width: 16px; height: 16px; }
+
+/* ---------- Touch and phones ---------- */
+/* Desktop menus are dropdowns; the scrim only exists for the phone bottom sheets below. */
+.menu-scrim { display: none; }
+.hint-touch { display: none; }
+@media (hover: none) {
+  .hint-mouse { display: none; }
+  .hint-touch { display: inline; }
+  .hilt-part:hover .hilt-part-hover { opacity: 0; }
+}
+
+/* Stopgap phone layout: one column, drawing first, nothing wider than the screen.
+   The phone-native design (vertical saber, tap a part for a sheet) is in docs/phone-layout.md. */
+@media (max-width: 900px) {
+  /* Top bar scrolls away: title and bell on one row, saber tabs scrolling sideways below. */
+  .topbar {
+    position: static; height: auto; flex-wrap: wrap; gap: 4px 12px; padding: 8px 12px;
+    background: var(--bg); backdrop-filter: none;
+  }
+  .topbar h1 { font-size: 17px; }
+  .topbar-end { order: 1; }
+  .saber-tabs {
+    order: 2; flex: 1 1 100%; overflow-x: auto; padding-bottom: 2px;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  }
+  .saber-tabs::-webkit-scrollbar { display: none; }
+  .saber-tab { flex: 0 0 auto; max-width: 180px; padding: 9px 12px; }
+  .add-saber { padding: 9px 12px; }
+
+  /* One column. The stage's children join the column so the drawing can come before the editor. */
+  .app { display: flex; flex-direction: column; gap: 12px; padding: 8px 12px 24px; }
+  .stage { display: contents; }
+  .pinned { order: 0; top: 0; margin: 0; padding: 4px 0 6px; }
+  .panel { order: 1; position: static; max-height: none; }
+  .compare { order: 2; padding: 12px; }
+  .list { order: 3; padding: 12px; }
+  .note { order: 4; }
+  .card { padding: 10px 10px 8px; }
+
+  .compare-lower { grid-template-columns: minmax(0, 1fr); }
+  .compare-summary { overflow-x: auto; }
+
+  /* Menus become bottom sheets over a dimmed page. */
+  .menu-scrim { display: block; position: fixed; inset: 0; z-index: 29; background: rgba(0, 0, 0, .55); }
+  .menu-panel, .menu-panel.left, .menu-panel.right {
+    position: fixed; top: auto; left: 0; right: 0; bottom: 0; min-width: 0; max-width: none; max-height: 75vh;
+    padding: 10px 10px calc(10px + env(safe-area-inset-bottom)); border-radius: 14px 14px 0 0; border-bottom: 0;
+  }
+  .share-box, .bell-panel { width: auto; }
+  .menu-item { padding: 11px 10px; font-size: 15px; }
+  .bell-item { padding: 9px 10px; }
+
+  /* Bigger tap targets, and 16px text in fields so iOS doesn't zoom in on focus. */
+  select, input[type=text], textarea { font-size: 16px; padding: 8px 10px; }
+  .saber-settings input[type=text] { font-size: 16px; }
+  .btn { padding: 9px 12px; }
+  .btn.icon { width: 40px; padding: 9px 0; }
+  .bell { width: 40px; height: 40px; padding: 0; }
+  input[type=color] { width: 40px; height: 38px; }
+  .dot { width: 30px; height: 30px; }
+  .blade-row .row { gap: 8px; }
+  .slot-toggle { padding: 10px; }
+  .slot.optional .slot-toggle { padding-top: 8px; padding-bottom: 8px; }
+  .slot-remove, .slot-remove-space { flex-basis: 38px; }
+  .add-ring { padding: 9px 10px; font-size: 13px; }
+  .chip { padding: 7px 12px; font-size: 13px; }
+  .finish-trigger, .finish-option { padding: 9px 10px; font-size: 15px; }
+  .finish-list .finish-option { padding: 9px 8px; }
+  .hint { text-align: left; }
+}
+
+/* Compare: size chart above the summary when the workbench column is narrow. */
+@container (max-width: 640px) {
+  .compare-lower { grid-template-columns: minmax(0, 1fr); }
+  .compare-summary { overflow-x: auto; }
+}

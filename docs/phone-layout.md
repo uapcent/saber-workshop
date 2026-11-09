@@ -1,5 +1,9 @@
 # Phone layout (reference, not implemented)
 
+**Current state (stopgap):** below 900px wide, `styles.css` stacks the desktop layout into one column (drawing first, sticky),
+the top bar scrolls away, menus open as bottom sheets and tap targets are larger. It works, but it is the desktop layout
+squeezed; the design below replaces it.
+
 The app is designed for computers first. When phones get their own pass, the layout should embrace the
 medium (a tall screen and touch) instead of shrinking the desktop layout:
 

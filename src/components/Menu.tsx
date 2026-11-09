@@ -24,12 +24,12 @@ export function Menu({ label, ariaLabel, className = 'btn', disabled, title, ali
       onClose?.();
       return;
     }
-    const onDown = (e: MouseEvent) => !root.current?.contains(e.target as Node) && setOpen(false);
+    const onDown = (e: PointerEvent) => !root.current?.contains(e.target as Node) && setOpen(false);
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
-    document.addEventListener('mousedown', onDown);
+    document.addEventListener('pointerdown', onDown);
     document.addEventListener('keydown', onKey);
     return () => {
-      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('pointerdown', onDown);
       document.removeEventListener('keydown', onKey);
     };
   }, [open]);
@@ -49,9 +49,13 @@ export function Menu({ label, ariaLabel, className = 'btn', disabled, title, ali
         {label}
       </button>
       {open && (
-        <div className={`menu-panel ${align}`} role="menu">
-          {children(() => setOpen(false))}
-        </div>
+        <>
+          {/* Phones show menus as bottom sheets; this dims the page and takes the tap that closes them. */}
+          <div className="menu-scrim" onClick={() => setOpen(false)} />
+          <div className={`menu-panel ${align}`} role="menu">
+            {children(() => setOpen(false))}
+          </div>
+        </>
       )}
     </div>
   );
