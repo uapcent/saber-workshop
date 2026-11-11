@@ -22,13 +22,20 @@ const noDetails = (): SurfaceDetails => ({ grooves: [], holes: [], knurls: [], r
  */
 const EVO_BODY_DETAILS: SurfaceDetails = {
   ...noDetails(),
-  // Grooves framing the two raised bands next to the emitter-side collar (too fine for the traced outline).
-  grooves: [[161, 1, -19, 19], [144, 1, -19, 19], [125, 1, -19, 19]],
-  // Two holes on each band.
-  holes: [[152.5, -3, 2.6, 2.6], [152.5, 13, 1.6, 2.4], [134.5, -6, 2.6, 2.6], [134.5, 11, 1.6, 2.4]],
+  holes: [
+    // USB-C charging slot, a pill cut across the groove next to the pommel collar.
+    [22.2, -5.5, 8.5, 2.2],
+    // Speaker holes: two drilled bands by the emitter collar, two holes of each in view (about 90° apart
+    // around the band, so the far one is seen almost edge-on).
+    [141.3, -8, 2.6, 2.7], [141.3, 16.2, 1.2, 2.7],
+    [128.5, -8, 2.6, 2.7], [128.5, 16.2, 1.2, 2.7],
+  ],
 };
-/** Three set screws around the base collar. */
-const EVO_EMITTER_DETAILS: SurfaceDetails = { ...noDetails(), holes: [[3.2, 0, 1.7, 1.7], [3.2, -14.5, 1.1, 1.5], [3.2, 14.5, 1.1, 1.5]] };
+/** The Mini body keeps the EVO ends and loses 30 mm of waist (see data/build_profiles.py). */
+const EVO_MINI_BODY_DETAILS: SurfaceDetails = {
+  ...EVO_BODY_DETAILS,
+  holes: EVO_BODY_DETAILS.holes.map(([x, ...rest]) => [x > 111 ? x - 30 : x, ...rest]),
+};
 
 /** EVO2 emitter (aluminum photos): fins in the waist, set screws in the collar, and a column of
  * holes between the fins, running slightly diagonally, that glows with the blade (store's lit photos). */
@@ -74,24 +81,29 @@ function pointOn(points: [number, number][], x: number): number {
   return points[points.length - 1][1];
 }
 
-/** Same details stretched to a shorter part (the Mini body is the EVO body scaled to 150 mm). */
-function stretch(d: SurfaceDetails, f: number): SurfaceDetails {
-  return {
-    ...d,
-    grooves: d.grooves.map(([x, w, y0, y1]) => [x * f, w, y0, y1]),
-    holes: d.holes.map(([x, y, w, h]) => [x * f, y, w, h]),
-  };
-}
-
 function ring(name: string, len: number, extra: Partial<PartModel> = {}): PartModel {
   return { name, len, profile: [[0, 18.4], [0.5, 19], [len - 0.5, 19], [len, 18.4]], ...extra };
 }
 
-const EVO_COUPLER: Profile = [[0, 19], [8, 19], [20, 17], [50, 17], [62, 19], [70, 19]];
+/**
+ * EVO coupler (aluminum photo p. 1504; the Maori edition, p. 5275, is the same tube engraved): a straight
+ * tube the full 70 mm between the two bodies, with small chamfers at the ends. Four rows of 13 holes run
+ * along it, 90° apart; the store photo looks between two rows, and so does the app (rows at ±45°, seen at
+ * an angle). Holes about 3 mm across, 4.4 mm apart, centred on the tube. Proportions checked against the
+ * photo after undoing its tilt (read from the end-face ellipse): the tube comes out 69 mm against 70.
+ */
+const EVO_COUPLER: Profile = [[0, 18.4], [0.8, 18.9], [69.2, 18.9], [70, 18.4]];
+const EVO_COUPLER_HOLE_ROW_Y = 18.9 * Math.sin(Math.PI / 4);
+const EVO_COUPLER_DETAILS: SurfaceDetails = {
+  ...noDetails(),
+  holes: Array.from({ length: 13 }, (_, i) => 35 + (i - 6) * 4.4).flatMap((x) =>
+    [-1, 1].map((side) => [x, side * EVO_COUPLER_HOLE_ROW_Y, 3 * Math.cos(Math.PI / 4), 3] as [number, number, number, number]),
+  ),
+};
 
 export const MODELS: Record<PartKind, Record<string, PartModel>> = {
   emitter: {
-    evo: traced('emitter.evo', 'EVO Emitter', { details: EVO_EMITTER_DETAILS }),
+    evo: traced('emitter.evo', 'EVO Emitter'),
     nxt: traced('emitter.nxt', 'NXT Emitter', { approx: true, details: NXT_EMITTER_DETAILS }),
     evo2: traced('emitter.evo2', 'EVO2 Emitter', { approx: true, details: EVO2_EMITTER_DETAILS }),
     x2: traced('emitter.x2', 'X2 Emitter', { legacy: true }),
@@ -102,7 +114,7 @@ export const MODELS: Record<PartKind, Record<string, PartModel>> = {
   },
   body: {
     evo: traced('body.evo', 'EVO Main Body', { details: EVO_BODY_DETAILS }),
-    mini: traced('body.mini', 'EVO Mini Main Body', { approx: true, details: stretch(EVO_BODY_DETAILS, 150 / 180) }),
+    mini: traced('body.mini', 'EVO Mini Main Body', { approx: true, details: EVO_MINI_BODY_DETAILS }),
     sse1: traced('body.sse1', 'SSe-1 Main Body', { legacy: true }),
     sse3: traced('body.sse3', 'SSe-3 Main Body', { legacy: true }),
     sse2: traced('body.sse2', 'SSe-2 Main Body', { legacy: true }),
@@ -119,8 +131,8 @@ export const MODELS: Record<PartKind, Record<string, PartModel>> = {
   coupler: {
     classic: { name: 'Polaris Coupler (2019)', len: 7, profile: [[0, 17.5], [7, 17.5]] },
     heavy: { name: 'Polaris Heavy Coupler', len: 20, approx: true, profile: [[0, 18.5], [20, 18.5]], grooves: [6, 14] },
-    evo: { name: 'EVO Coupler', len: 70, profile: EVO_COUPLER, facets: [20, 50], holes: true },
-    maori: { name: 'EVO Coupler Maori (limited)', len: 70, profile: EVO_COUPLER, facets: [20, 50], mark: 'tribe' },
+    evo: { name: 'EVO Coupler', len: 70, profile: EVO_COUPLER, details: EVO_COUPLER_DETAILS },
+    maori: { name: 'EVO Coupler Maori (limited)', len: 70, profile: EVO_COUPLER, details: EVO_COUPLER_DETAILS, mark: 'tribe' },
   },
   ring: {
     plain: ring('Plain Ring 10 mm', 10),

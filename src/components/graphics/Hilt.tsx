@@ -163,10 +163,6 @@ function PartShape({ id, kind, choice, x0, mask, glow, filters, interaction, par
       <path d={d} fill="none" stroke="rgba(0,0,0,.5)" strokeWidth={0.35} strokeLinejoin="round" />
       {m.facets?.map((x) => edge(x, 'rgba(0,0,0,.38)', 'rgba(255,255,255,.10)'))}
       {m.grooves?.map((x) => edge(x, 'rgba(0,0,0,.6)', 'rgba(255,255,255,.14)'))}
-      {m.holes &&
-        [24, 29.5, 35, 40.5, 46].flatMap((x) =>
-          [-8, 0, 8].map((y) => <ellipse key={`${x},${y}`} cx={x0 + x} cy={y} rx={1.6} ry={2.6} fill="#060607" opacity={0.85} />),
-        )}
       {m.mark === 'star' && (
         <path
           d={starPath(x0 + m.len / 2, 0, 3.4)}

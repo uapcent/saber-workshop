@@ -54,17 +54,6 @@ def scale(pts, f):
     return [[round(x * f, 1), r] for x, r in pts]
 
 
-def cap_top(pts):
-    """Emitter mouth: the photo silhouette rounds off the rim seen from above; keep the rim at full flare."""
-    top = max(r for _, r in pts)
-    out, seen = [], False
-    for x, r in pts:
-        if r >= top - 0.05:
-            seen = True
-        out.append([x, round(top - 0.4, 2) if seen and r < top - 0.4 else r])
-    return out
-
-
 def pin_ends(pts, r=18.9):
     """Force both ends to at least the thread radius so neighbouring parts meet flush."""
     pts = [list(p) for p in pts]
@@ -90,25 +79,66 @@ CHART = {
  "pom_sse2": [[0.7,18.4],[2.1,19.9],[3.5,19.9],[5,21.3],[6.4,22],[7.8,22.7],[10.6,22.7],[12.1,22],[13.5,21.3],[14.9,19.9],[16.3,19.9]],
 }
 PHOTO = {
- "emi_evo": [[0,17.62],[6.3,17.79],[9.9,15.96],[14.4,14.23],[20.8,13.39],[26.2,13.79],[30.7,15.01],[32.5,15.76],[36.1,18.67],[38.8,19.46],[40.6,19.43],[42.4,18.9],[46,16.04]],
  # EVO2 and NXT emitters: side silhouettes of the aluminum product photos (p-emi-ev2-alu.png, p-emi-nxt-alu.png), from the base collar to the mouth, stretched to 46 mm and scaled so the collar meets the body (r 18.9).
  "emi_evo2": [[0,18.5],[1.1,18.7],[2.7,18.9],[4.3,19.0],[5.9,19.1],[7.5,18.9],[9.1,18.4],[10.7,17.4],[12.4,16.5],[14.0,15.8],[15.6,15.2],[17.2,14.7],[18.8,14.4],[20.4,14.1],[22.0,14.1],[23.6,14.1],[25.3,14.3],[26.9,14.5],[28.5,14.9],[30.1,15.4],[31.7,16.1],[33.3,16.9],[34.9,17.9],[36.5,19.1],[38.1,19.7],[39.8,20.1],[41.4,20.2],[43.0,19.8],[46,19.5]],
  "emi_nxt": [[0,18.5],[0.7,18.5],[2.1,18.8],[3.6,18.9],[5.1,18.9],[6.6,19.0],[8.1,18.8],[9.6,18.2],[11.1,18.7],[12.6,19.1],[14.0,19.3],[15.5,19.4],[17.0,19.3],[18.5,19.0],[20.0,18.6],[21.5,18.0],[23.0,17.5],[24.4,17.0],[25.9,16.6],[27.4,16.3],[28.9,16.1],[30.4,15.9],[31.9,15.8],[33.4,15.8],[34.9,16.0],[36.3,16.2],[37.8,16.5],[39.3,16.8],[40.8,17.3],[42.3,17.7],[44.5,18.0],[46,17.9]],
- "pom_evo": [[0,11.77],[2,14.08],[4,15.45],[8,17.36],[12,18.41],[15.3,18.87],[20,18.7],[21.3,18.11],[24,15.55],[24.7,15.82],[26.7,18.03],[28,18.7],[30.7,18.94],[34,18.14]],
- "body_evo": [[0,16.69],[4.8,18.16],[9.6,18.73],[33.6,18.34],[55.2,16.02],[69.6,15.33],[81.6,15.53],[108,17.12],[115.2,16.62],[122.4,16.8],[127.2,16.43],[134.4,16.44],[141.6,15.78],[148.8,16.48],[160.8,16.31],[168,18.89],[175.2,18.53],[180,17.57]],
 }
+
+# EVO main body, from the pommel end: collar, groove with the USB-C slot, short raised shoulder, long
+# concave waist, raised ring with a wide chamfer, two drilled bands with V valleys, step up to the
+# threaded emitter collar. Measured from the Dark Matter photo (p. 2987: both edges, perspective-
+# corrected so the two end collars come out equal), features placed from the aluminum photos (p. 1900:
+# p-mbo-b42-alu, dettaglio-usb, dettaglio-audio). The waist is a quartic fitted to the silhouette
+# (residual < 0.2 mm); edges are made crisp where the photos show a turned edge.
+EVO_BODY_WAIST = (31, 111)  # where the waist starts and ends (mm from the pommel end)
+EVO_BODY = (
+    [[0, 18.9], [20.5, 18.9], [21, 18.4], [23.5, 18.4], [24, 18.8], [26.5, 18.8], [27.5, 19.1], [31, 19.1]]
+    + [[31.3, 18.95], [35, 18.88], [38, 18.62], [41, 18.32], [44, 17.99], [48, 17.63], [52, 17.3], [56, 17.01],
+       [60, 16.78], [64, 16.61], [68, 16.49], [72, 16.45], [76, 16.46], [80, 16.55], [84, 16.69], [88, 16.9],
+       [92, 17.16], [96, 17.47], [100, 17.82], [104, 18.2], [108, 18.6], [111, 18.88]]
+    + [[111.5, 19.05], [119, 19.05], [122, 17.9], [123.5, 17.9], [125.5, 18.92], [131.5, 18.92], [136, 17.95],
+       [137, 17.95], [139, 18.72], [143.5, 18.72], [150, 17.35], [151, 17.35], [153.5, 18.9], [180, 18.9]]
+)
+
+
+# EVO emitter, visible part only (x from the body joint to the mouth). Measured from the Dark Matter
+# (p. 2494) and aluminum (p. 1896) photos and averaged; they agree to ~0.5 mm. Both are shot about 27°
+# from above, read from the mouth-rim ellipse and corrected for (visible length comes out 46.1-46.4 mm,
+# published 46). The base runs flush with the body for 8 mm, curves into a waist (r 14.3 at x=25), and
+# flares into a rounded lip 41.7 mm across at the mouth. The set-screw band below the base is hidden
+# inside the body collar.
+EVO_EMITTER = [
+    [0, 18.9], [8, 18.9], [9, 18.72], [10, 18.23], [11, 17.68], [12, 17.16], [13, 16.74], [14, 16.33],
+    [15, 15.95], [16, 15.6], [17, 15.28], [18, 15.03], [20, 14.73], [22, 14.48], [24, 14.33], [26, 14.34],
+    [28, 14.5], [30, 14.73], [32, 15.1], [34, 15.56], [36, 16.3], [38, 17.1], [39, 17.68], [40, 18.45],
+    [41, 19.25], [42, 19.9], [43, 20.34], [44, 20.64], [45, 20.82], [45.6, 20.85], [46, 20.5],
+]
+
+# EVO pommel (x from the tip, 34 mm visible as published). Fitted to both store photos (Dark Matter
+# p. 3000, aluminum p. 1902) through the camera projection: every circle of the part shows up as an
+# ellipse in a photo taken from above, so the dome's near edge spills over the finger groove and the
+# flat top adds length past the tip. The fit finds the photos were shot
+# ~21 deg from above and gives: flat top face r ~14, dome rounding out to r 18.9, a symmetric U finger
+# groove 9.7 mm wide with its bottom at r 15.15, and a 4.6 mm base ring against the body.
+EVO_POMMEL = [[0, 14.0], [0.7, 15.02], [1.5, 15.43], [3, 16.13], [5, 16.95], [7, 17.62], [10, 18.36], [13, 18.79], [15.5, 18.9], [19.7, 18.9], [19.77, 18.25], [19.99, 17.62], [20.35, 17.02], [20.83, 16.49], [21.43, 16.03], [22.13, 15.65], [22.89, 15.38], [23.71, 15.21], [24.55, 15.15], [25.39, 15.21], [26.21, 15.38], [26.97, 15.65], [27.67, 16.03], [28.27, 16.49], [28.75, 17.02], [29.11, 17.62], [29.33, 18.25], [29.4, 18.9], [33.5, 18.9], [34, 18.4]]
+
+
+def shorten(pts, x0, x1, by):
+    """Squeeze the stretch [x0, x1] by `by` mm, keeping everything outside it at its real size."""
+    f = (x1 - x0 - by) / (x1 - x0)
+    return [[round(x if x <= x0 else x0 + (x - x0) * f if x <= x1 else x - by, 2), r] for x, r in pts]
 
 def build():
     k, cr = EXPLODED_SCALE, CHART_STROKE
     P = {}
     # EVO (photo-measured, fitted to the published lengths)
-    P["emitter.evo"] = cap_top(PHOTO["emi_evo"])
+    P["emitter.evo"] = EVO_EMITTER
     P["emitter.evo2"] = pin_ends(PHOTO["emi_evo2"])
     P["emitter.nxt"] = pin_ends(PHOTO["emi_nxt"])
-    P["body.evo"] = pin_ends(PHOTO["body_evo"])
-    P["body.mini"] = pin_ends(norm(PHOTO["body_evo"], L=150))
-    P["pommel.evo"] = PHOTO["pom_evo"]
-    P["pommel.mini"] = norm(PHOTO["pom_evo"], L=20, x0=0, x1=21.3)
+    P["body.evo"] = EVO_BODY
+    P["body.mini"] = shorten(EVO_BODY, *EVO_BODY_WAIST, by=30)  # same ends, shorter waist (approx.)
+    P["pommel.evo"] = EVO_POMMEL
+    P["pommel.mini"] = norm(EVO_POMMEL, L=20)  # same design squeezed to 20 mm (approx.)
     # Pommel Adaptor and masks (exploded diagram): mask, then the 5.8 mm adaptor rim
     std = scale(EXP["mask_std"], k)
     P["pommel.adaptor"] = std + [[round(std[-1][0] + 0.1, 1), 19], [20, 19]]

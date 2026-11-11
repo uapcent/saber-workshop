@@ -60,8 +60,6 @@ export interface PartModel {
   /** Edge lines drawn across the part (x mm). */
   facets?: number[];
   grooves?: number[];
-  /** EVO coupler perforations. */
-  holes?: boolean;
   mark?: 'star' | 'tribe';
   /** Lines and holes drawn inside the outline (from data/details.json). */
   details?: SurfaceDetails;
