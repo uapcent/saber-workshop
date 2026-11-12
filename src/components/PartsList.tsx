@@ -73,8 +73,30 @@ function unavailable(row: PartRow): string | null {
   return null;
 }
 
+/**
+ * WooCommerce shareable checkout link: `/checkout-link/?products=id:qty,id:qty` opens the store's checkout
+ * with exactly those products. Holds every part that can be bought now: store parts, and the aluminum bases
+ * of parts to coat. Null when there is nothing to buy.
+ */
+function checkoutLink(rows: PartRow[]): { url: string; count: number; bases: number } | null {
+  const qty = new Map<number, number>();
+  let bases = 0;
+  for (const row of rows) {
+    if (unavailable(row) !== null) continue;
+    const st = row.status;
+    const listing = st.kind === 'store' ? st : st.kind === 'coat' ? st.base : null;
+    if (!listing) continue;
+    if (st.kind === 'coat') bases += row.quantity;
+    qty.set(listing.id, (qty.get(listing.id) ?? 0) + row.quantity);
+  }
+  if (!qty.size) return null;
+  const products = [...qty].map(([id, q]) => `${id}:${q}`).join(',');
+  return { url: `https://lamadiluce.it/checkout-link/?products=${products}`, count: [...qty.values()].reduce((a, b) => a + b, 0), bases };
+}
+
 export function PartsList({ saber, totals: t }: { saber: Saber; totals: Totals }) {
   const problems = [...new Set(t.rows.map(unavailable).filter((p): p is string => !!p))];
+  const order = checkoutLink(t.rows);
   return (
     <section className="list">
       <h2>Shopping list · {saber.name || 'Untitled'}</h2>
@@ -117,6 +139,19 @@ export function PartsList({ saber, totals: t }: { saber: Saber; totals: Totals }
           )}
         </tfoot>
       </table>
+      {order && (
+        <div className="order">
+          <a className="btn primary" href={order.url} target="_blank" rel="noopener">
+            Order {order.count === 1 ? 'this part' : `these ${order.count} parts`} on lamadiluce.it
+          </a>
+          <span className="small">
+            Opens the store's checkout with the parts already in it
+            {order.bases > 0 && `, including ${order.bases === 1 ? 'the aluminum base' : `${order.bases} aluminum bases`} to coat`}
+            {problems.length > 0 && '. Parts that can’t be bought now are left out'}. It may replace what is already in your
+            lamadiluce.it cart.
+          </span>
+        </div>
+      )}
       <p className="small footnote">
         Not included: Anima core (LED, speaker, battery, USB switch), lens, blade{saber.style === 'staff' ? 's' : ''}, screws, weight disk and
         weights.

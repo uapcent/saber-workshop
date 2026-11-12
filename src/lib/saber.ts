@@ -171,17 +171,126 @@ export function warnings(s: Saber, t: Totals = totals(s)): string[] {
   return w;
 }
 
-/* ---------- Share codes: base64 of the UTF-8 JSON (same format as v1) ---------- */
+/*
+ * ---------- Share codes ----------
+ *
+ * The site has no server to store sabers under a short id, so the code carries the whole saber. v2 packs it
+ * into a few bytes (about 12 characters plus the name); v1 codes, base64 of the saber's JSON, still open.
+ *
+ * v2 bytes, then URL-safe base64 without padding:
+ *   0     version (2)
+ *   1     style (bits 0-1) · extra mask (2) · blade on (3) · rings on the emitter side (4-6)
+ *   2     rings on the other side (bits 0-2) · blade color: index in BLADE_COLORS, 31 = three RGB bytes follow (3-7)
+ *   then  emitter, emitter-side rings, body, other rings, pommel, coupler: one byte each, model index
+ *         (bits 5-7, 7 = index in the next byte) and finish index (bits 0-4, 30 = index in the next byte,
+ *         31 = custom color, three RGB bytes follow)
+ *   rest  name, UTF-8
+ *
+ * The index lists below are part of the format: only ever append to them.
+ */
+const CODE_FINISHES = ['aluminum', 'dark', 'stellar', 'blood', 'cobalt', 'viridian', 'violet', 'sideral', 'lunar', 'solar', 'ygg', 'cremisi', 'fume', 'giada', 'magma', 'zaffiro', 'white', 'bone', 'gold', 'brass', 'rose', 'bronze', 'gunmetal', 'gloss'];
+const CODE_MODELS: Record<PartKind, string[]> = {
+  emitter: ['evo', 'nxt', 'evo2', 'x2', 'sse1', 'sse2', 'sse3', 'artiglio'],
+  body: ['evo', 'mini', 'sse1', 'sse3', 'sse2'],
+  pommel: ['evo', 'mini', 'adaptor', 'sse1', 'sse3std', 'sse3extra', 'sse2'],
+  coupler: ['classic', 'heavy', 'evo', 'maori'],
+  ring: ['plain', 'thin', 'logo', 'tribe'],
+};
+const CODE_STYLES: Style[] = ['sword', 'dagger', 'staff'];
+const CODE_BLADE_COLORS = ['#4aa3ff', '#3ddc6a', '#ff3b30', '#a259ff', '#f4f4f4', '#ffb22e'];
+const CODE_VERSION = 2;
+
+const toB64Url = (bytes: Uint8Array) =>
+  btoa(Array.from(bytes, (b) => String.fromCharCode(b)).join('')).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+function fromB64Url(code: string): Uint8Array {
+  const b64 = code.trim().replace(/-/g, '+').replace(/_/g, '/');
+  return Uint8Array.from(atob(b64 + '='.repeat((4 - (b64.length % 4)) % 4)), (c) => c.charCodeAt(0));
+}
+
+const rgbBytes = (hex: string) => {
+  const n = parseInt(/^#[0-9a-f]{6}$/i.test(hex) ? hex.slice(1) : '888888', 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+};
+const hexOf = (r: number, g: number, b: number) => '#' + [r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('');
 
 export function encodeSaber(s: Saber): string {
-  const bytes = new TextEncoder().encode(JSON.stringify(s));
-  return btoa(Array.from(bytes, (b) => String.fromCharCode(b)).join(''));
+  const out: number[] = [CODE_VERSION];
+  const top = s.ringsTop.slice(0, 7);
+  const bottom = s.ringsBottom.slice(0, 7);
+  out.push(Math.max(0, CODE_STYLES.indexOf(s.style)) | (s.mask === 'extra' ? 4 : 0) | (s.blade.on ? 8 : 0) | (top.length << 4));
+  const blade = CODE_BLADE_COLORS.indexOf(s.blade.color.toLowerCase());
+  out.push(bottom.length | ((blade < 0 ? 31 : blade) << 3));
+  if (blade < 0) out.push(...rgbBytes(s.blade.color));
+
+  const part = (kind: PartKind, p: PartChoice) => {
+    const m = Math.max(0, CODE_MODELS[kind].indexOf(p.model));
+    const f = CODE_FINISHES.indexOf(p.finish);
+    const custom = isCustomColor(p.finish);
+    const fBits = custom ? 31 : f < 0 ? 0 : f < 30 ? f : 30;
+    out.push((Math.min(m, 7) << 5) | fBits);
+    if (m >= 7) out.push(m);
+    if (fBits === 30) out.push(f);
+    if (custom) out.push(...rgbBytes(p.finish.slice(HEX_PREFIX.length)));
+  };
+  part('emitter', s.emitter);
+  top.forEach((r) => part('ring', r));
+  part('body', s.body);
+  bottom.forEach((r) => part('ring', r));
+  part('pommel', s.pommel);
+  part('coupler', s.coupler);
+  out.push(...new TextEncoder().encode(s.name));
+  return toB64Url(Uint8Array.from(out));
+}
+
+/** The saber in a v2 code, unchecked (normalizeSaber validates it). */
+function decodeCompact(bytes: Uint8Array): unknown {
+  let i = 1;
+  const next = () => {
+    if (i >= bytes.length) throw new Error('Share code is cut short');
+    return bytes[i++];
+  };
+  const flags = next();
+  const second = next();
+  const bladeIndex = second >> 3;
+  const color = bladeIndex === 31 ? hexOf(next(), next(), next()) : CODE_BLADE_COLORS[bladeIndex] ?? CODE_BLADE_COLORS[0];
+  const part = (kind: PartKind): PartChoice => {
+    const b = next();
+    let m = b >> 5;
+    let f = b & 31;
+    if (m === 7) m = next();
+    let finish: FinishKey;
+    if (f === 31) finish = customColor(hexOf(next(), next(), next()));
+    else {
+      if (f === 30) f = next();
+      finish = CODE_FINISHES[f] ?? 'aluminum';
+    }
+    return { model: CODE_MODELS[kind][m] ?? '', finish };
+  };
+  const emitter = part('emitter');
+  const ringsTop = Array.from({ length: (flags >> 4) & 7 }, () => part('ring'));
+  const body = part('body');
+  const ringsBottom = Array.from({ length: second & 7 }, () => part('ring'));
+  const pommel = part('pommel');
+  const coupler = part('coupler');
+  return {
+    name: new TextDecoder().decode(bytes.slice(i)),
+    style: CODE_STYLES[flags & 3] ?? 'sword',
+    mask: flags & 4 ? 'extra' : 'standard',
+    blade: { on: !!(flags & 8), color },
+    emitter,
+    ringsTop,
+    body,
+    ringsBottom,
+    pommel,
+    coupler,
+  };
 }
 
 export function decodeSaber(code: string): unknown {
-  // Links carry the code in URL-safe base64 (- and _ instead of + and /, no padding).
-  const b64 = code.trim().replace(/-/g, '+').replace(/_/g, '/');
-  const bytes = Uint8Array.from(atob(b64 + '='.repeat((4 - (b64.length % 4)) % 4)), (c) => c.charCodeAt(0));
+  const bytes = fromB64Url(code);
+  // v1 codes are JSON, so their first byte is "{"; v2 codes start with the version.
+  if (bytes[0] === CODE_VERSION) return decodeCompact(bytes);
   return JSON.parse(new TextDecoder().decode(bytes));
 }
 
@@ -191,8 +300,7 @@ const LINK_HASH = /#s=([A-Za-z0-9+/=_-]+)/;
 
 /** A link to this page that opens the saber. */
 export function shareLink(s: Saber): string {
-  const code = encodeSaber(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  return `${location.origin}${location.pathname}#s=${code}`;
+  return `${location.origin}${location.pathname}#s=${encodeSaber(s)}`;
 }
 
 /** The share code inside a pasted link (or the text itself, for a bare v1 share code). */

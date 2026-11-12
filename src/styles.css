@@ -258,6 +258,9 @@ input[type=color] {
 .list h2 { margin-bottom: 10px; }
 .qty { color: var(--accent); font-weight: 600; }
 .footnote { margin: 8px 0 0; }
+.order { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+.order .btn { text-decoration: none; display: inline-block; }
+.order .small { flex: 1 1 260px; }
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
 th, td { padding: 6px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
 th { font: 600 10.5px var(--font-display); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }

@@ -25,7 +25,10 @@ Every push to `main` builds the site and publishes it to GitHub Pages (`.github/
 
 - `src/data/catalog.ts` – finishes, store prices, stock and product ids.
 - `src/data/models.ts` – part models, styles, blade colors and presets.
-- `src/lib/saber.ts` – store status, totals, length classes, warnings, share codes and share links (`#s=<code>`).
+- `src/lib/saber.ts` – store status, totals, length classes, warnings, share codes and share links (`#s=<code>`). Share codes are v2: the saber
+  packed into a few bytes (about 12 characters plus the name); v1 codes (base64 JSON) still open.
+- `src/components/PartsList.tsx` – shopping list, with an "Order on lamadiluce.it" button: a WooCommerce shareable checkout link
+  (`/checkout-link/?products=id:qty,…`) holding every part that can be bought now, aluminum bases of parts to coat included.
 - `src/lib/sound.ts` – blade sounds: power-on, a few seconds of hum, power-off (Web Audio API).
 - `public/sounds/` – those sounds as WAV, converted from the public OpenCore OEM sound font's `POWERON_0`, `HUM_0` and
   `POWEROFF_0` RAW files (16-bit mono, 44.1 kHz).
