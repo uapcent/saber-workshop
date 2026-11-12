@@ -1,9 +1,10 @@
 import { useState, type Dispatch } from 'react';
 import type { Saber } from '../types';
 import { PRESETS, normalizeSaber } from '../data/models';
-import { decodeSaber, shareCodeOf } from '../lib/saber';
+import { decodeSaber, shareCodeOf, totals } from '../lib/saber';
 import type { StoreState } from '../lib/storeFeed';
 import { MAX_SABERS, type Action, type WorkshopState } from '../state/workshop';
+import { SaberGraphic } from './graphics/SaberGraphic';
 import { Menu } from './Menu';
 import { StoreBell } from './StoreBell';
 
@@ -45,7 +46,10 @@ function CodeInput({ onOpen }: { onOpen: (code: string) => boolean }) {
   );
 }
 
-/** Saber tabs (1 to 4) and the menu to add one from a preset, a saved design or a share code. */
+/**
+ * Saber tabs (1 to 4) and the menu to add one from a preset, a saved design or a share code.
+ * Desktop shows a row of tabs; phones show four fixed slots with a small drawing of each saber (CSS picks one).
+ */
 export function TopBar({ state, dispatch, store, onShared }: Props) {
   const full = state.slots.length >= MAX_SABERS;
 
@@ -61,6 +65,48 @@ export function TopBar({ state, dispatch, store, onShared }: Props) {
     return true;
   };
 
+  const addMenu = (close: () => void) => (
+    <>
+      <div className="menu-heading">Start from a preset</div>
+      {Object.entries(PRESETS).map(([key, p]) => (
+        <button
+          key={key}
+          className="menu-item"
+          onClick={() => {
+            dispatch({ type: 'add', saber: p });
+            close();
+          }}
+        >
+          {p.name}
+        </button>
+      ))}
+      <div className="menu-heading">Your saved designs</div>
+      {state.saved.length === 0 && <div className="menu-empty">Save a saber from its ⋯ menu to keep it here.</div>}
+      {state.saved.map((d, index) => (
+        <div className="menu-row" key={index}>
+          <button
+            className="menu-item"
+            onClick={() => {
+              const saber = normalizeSaber(d.saber);
+              if (saber) dispatch({ type: 'add', saber });
+              close();
+            }}
+          >
+            {d.name}
+          </button>
+          <button className="btn icon ghost" aria-label={`Delete saved design ${d.name}`} onClick={() => dispatch({ type: 'deleteSaved', index })}>
+            ✕
+          </button>
+        </div>
+      ))}
+      <div className="menu-heading">Open a share link</div>
+      <CodeInput onOpen={(code) => openCode(code) && (close(), true)} />
+    </>
+  );
+
+  const select = (index: number) => dispatch({ type: 'select', index });
+  const empty = Math.max(0, MAX_SABERS - state.slots.length - 1);
+
   return (
     <header className="topbar">
       <h1>Saber Workshop</h1>
@@ -71,7 +117,7 @@ export function TopBar({ state, dispatch, store, onShared }: Props) {
             role="tab"
             aria-selected={i === state.active}
             className={'saber-tab' + (i === state.active ? ' on' : '')}
-            onClick={() => dispatch({ type: 'select', index: i })}
+            onClick={() => select(i)}
             title={slot.saber.name || 'Untitled'}
           >
             <span className="saber-tab-dot" style={{ background: slot.saber.blade.color }} />
@@ -84,45 +130,37 @@ export function TopBar({ state, dispatch, store, onShared }: Props) {
           disabled={full}
           title={full ? `Up to ${MAX_SABERS} sabers` : undefined}
         >
-          {(close) => (
-            <>
-              <div className="menu-heading">Start from a preset</div>
-              {Object.entries(PRESETS).map(([key, p]) => (
-                <button
-                  key={key}
-                  className="menu-item"
-                  onClick={() => {
-                    dispatch({ type: 'add', saber: p });
-                    close();
-                  }}
-                >
-                  {p.name}
-                </button>
-              ))}
-              <div className="menu-heading">Your saved designs</div>
-              {state.saved.length === 0 && <div className="menu-empty">Save a saber from its ⋯ menu to keep it here.</div>}
-              {state.saved.map((d, index) => (
-                <div className="menu-row" key={index}>
-                  <button
-                    className="menu-item"
-                    onClick={() => {
-                      const saber = normalizeSaber(d.saber);
-                      if (saber) dispatch({ type: 'add', saber });
-                      close();
-                    }}
-                  >
-                    {d.name}
-                  </button>
-                  <button className="btn icon ghost" aria-label={`Delete saved design ${d.name}`} onClick={() => dispatch({ type: 'deleteSaved', index })}>
-                    ✕
-                  </button>
-                </div>
-              ))}
-              <div className="menu-heading">Open a share link</div>
-              <CodeInput onOpen={(code) => openCode(code) && (close(), true)} />
-            </>
-          )}
+          {addMenu}
         </Menu>
+      </nav>
+      {/* Phones: every saber always on screen, in fixed slots that never scroll. "+ Add" takes the next free slot. */}
+      <nav className="saber-slots" role="tablist" aria-label="Sabers">
+        {state.slots.map((slot, i) => {
+          const name = slot.saber.name || 'Untitled';
+          return (
+            <button
+              key={slot.uid}
+              role="tab"
+              aria-selected={i === state.active}
+              aria-label={name}
+              className={'saber-slot' + (i === state.active ? ' on' : '')}
+              onClick={() => select(i)}
+            >
+              <span className="saber-slot-figure" aria-hidden="true">
+                <SaberGraphic saber={slot.saber} hiltLength={totals(slot.saber).length} />
+              </span>
+              <span className="saber-slot-name">{name}</span>
+            </button>
+          );
+        })}
+        {!full && (
+          <Menu label={<><span className="saber-slot-plus">+</span>Add</>} ariaLabel="Add saber" className="saber-slot add">
+            {addMenu}
+          </Menu>
+        )}
+        {Array.from({ length: empty }, (_, i) => (
+          <span key={i} className="saber-slot-space" />
+        ))}
       </nav>
       <div className="topbar-end">
         <StoreBell store={store} />

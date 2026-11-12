@@ -44,6 +44,7 @@ h3 { margin: 0 0 2px; font: 600 13px var(--font-display); letter-spacing: .04em;
 .saber-tab.on { color: var(--text); background: var(--raise); border-color: var(--line); box-shadow: inset 0 -2px 0 var(--accent); }
 .saber-tab-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
 .add-saber { white-space: nowrap; }
+.saber-slots { display: none; }
 .topbar-end { margin-left: auto; display: flex; align-items: center; }
 
 /* Store updates bell */
@@ -296,23 +297,35 @@ tfoot td { border-bottom: 0; font-weight: 600; }
   .hilt-part:hover .hilt-part-hover { opacity: 0; }
 }
 
-/* Stopgap phone layout: one column, drawing first, nothing wider than the screen.
-   The phone-native design (vertical saber, tap a part for a sheet) is in docs/phone-layout.md. */
+/* Phone layout: one column, drawing first, nothing wider than the screen. See docs/phone-layout.md. */
 @media (max-width: 900px) {
-  /* Top bar scrolls away: title and bell on one row, saber tabs scrolling sideways below. */
+  /* Top bar scrolls away: title and bell on one row, the saber slots below. */
   .topbar {
     position: static; height: auto; flex-wrap: wrap; gap: 4px 12px; padding: 8px 12px;
     background: var(--bg); backdrop-filter: none;
   }
   .topbar h1 { font-size: 17px; }
   .topbar-end { order: 1; }
-  .saber-tabs {
-    order: 2; flex: 1 1 100%; overflow-x: auto; padding-bottom: 2px;
-    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+
+  /* Saber switcher: four fixed slots replace the desktop tabs, so every saber is always on screen. */
+  .saber-tabs { display: none; }
+  .saber-slots { order: 2; flex: 1 1 100%; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; padding-bottom: 4px; }
+  .saber-slots .menu { display: grid; }
+  .saber-slot {
+    display: grid; justify-items: center; align-content: start; gap: 3px; min-width: 0; padding: 6px 4px 7px;
+    border: 1px solid var(--line); border-radius: 8px; background: rgba(255, 255, 255, .02);
+    color: var(--muted); font: 600 11px/1.25 var(--font-body); cursor: pointer;
   }
-  .saber-tabs::-webkit-scrollbar { display: none; }
-  .saber-tab { flex: 0 0 auto; max-width: 180px; padding: 9px 12px; }
-  .add-saber { padding: 9px 12px; }
+  .saber-slot.on { color: var(--text); background: var(--raise); border-color: #454b55; box-shadow: inset 0 -2px 0 var(--accent); }
+  .saber-slot-figure { display: block; width: 100%; }
+  .saber-slot-figure svg { display: block; width: 100%; height: 22px; }
+  .saber-slot-name {
+    width: 100%; min-height: 2.5em; text-align: center; overflow-wrap: anywhere;
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden;
+  }
+  .saber-slot.add { border-style: dashed; background: transparent; align-content: center; font-size: 12px; }
+  .saber-slot.add.open { border-color: #454b55; }
+  .saber-slot-plus { font-size: 20px; line-height: 20px; font-weight: 500; color: var(--text); }
 
   /* One column. The stage's children join the column so the drawing can come before the editor. */
   .app { display: flex; flex-direction: column; gap: 12px; padding: 8px 12px 24px; }
