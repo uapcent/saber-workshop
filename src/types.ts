@@ -55,6 +55,8 @@ export interface PartModel {
   profile: Profile;
   /** Alternative outline with the extra pommel mask (Pommel Adaptor). */
   profileExtra?: Profile;
+  /** Empty weight in grams, from the store's product description (or estimated from a part of the same shape). */
+  weight?: number;
   legacy?: boolean;
   approx?: boolean;
   /** Edge lines drawn across the part (x mm). */

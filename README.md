@@ -58,7 +58,11 @@ accepts both share links and bare codes.
 - **EVO lengths (published):** emitter 64 mm (46 visible), main body 180 mm, Mini body 150 mm,
   pommel 52 mm (34 visible), Mini pommel 28 mm (20 visible), ring 10 mm × 38 mm,
   thin ring 3.3 mm, EVO coupler separates bodies by 70 mm.
-- **Length classes:** Short 18–26 cm, Long 26–32 cm, Staff 41–54 cm, InCom tolerance ±2 mm.
+- **Length classes:** Short 18–26 cm, Long 26–32 cm, Staff 36–54 cm, InCom tolerance ±2 mm (INCOM ITR 4.0.3, rule 4.1).
+- **Hilt weight:** rule 4.1 weighs the hilt without the blade: sword 440–730 g, dagger 340–630 g, staff 520–830 g. Part weights are the empty
+  weights in the lamadiluce.it product descriptions; parts of the same kind and shape are taken to weigh the same. The app counts only the hilt
+  parts (no Anima or balance weights), so it warns only when they are already over the maximum. Couplers, the Pommel Adaptor and legacy parts
+  have no known weight.
 - **Outlines:**
   - SSe-3 body/emitter, Pommel Adaptor masks: official exploded diagram (to scale, 110 px = 38 mm).
   - SSe-1, SSe-2, X2, Artiglio, SSe-1/2 emitters and pommels: official size chart (141 px = 200 mm).

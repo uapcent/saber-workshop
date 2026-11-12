@@ -101,11 +101,16 @@ const EVO_COUPLER_DETAILS: SurfaceDetails = {
   ),
 };
 
+/*
+ * Weights (g, empty) are the ones in the lamadiluce.it product descriptions, 12 Nov 2026. Parts of the same
+ * kind and shape are taken to weigh the same: the logo ring as the 10 mm plain and Tribe rings (3.9 to 4.2 g),
+ * the thin ring as a third of that. The store gives none for the couplers, the Pommel Adaptor and legacy parts.
+ */
 export const MODELS: Record<PartKind, Record<string, PartModel>> = {
   emitter: {
-    evo: traced('emitter.evo', 'EVO Emitter'),
-    nxt: traced('emitter.nxt', 'NXT Emitter', { approx: true, details: NXT_EMITTER_DETAILS }),
-    evo2: traced('emitter.evo2', 'EVO2 Emitter', { approx: true, details: EVO2_EMITTER_DETAILS }),
+    evo: traced('emitter.evo', 'EVO Emitter', { weight: 66 }),
+    nxt: traced('emitter.nxt', 'NXT Emitter', { approx: true, details: NXT_EMITTER_DETAILS, weight: 75 }),
+    evo2: traced('emitter.evo2', 'EVO2 Emitter', { approx: true, details: EVO2_EMITTER_DETAILS, weight: 58 }),
     x2: traced('emitter.x2', 'X2 Emitter', { legacy: true }),
     sse1: traced('emitter.sse1', 'SSe-1 Emitter', { legacy: true }),
     sse2: traced('emitter.sse2', 'SSe-2 Emitter', { legacy: true }),
@@ -113,15 +118,16 @@ export const MODELS: Record<PartKind, Record<string, PartModel>> = {
     artiglio: traced('emitter.artiglio', 'Artiglio Emitter', { legacy: true }),
   },
   body: {
-    evo: traced('body.evo', 'EVO Main Body', { details: EVO_BODY_DETAILS }),
-    mini: traced('body.mini', 'EVO Mini Main Body', { approx: true, details: EVO_MINI_BODY_DETAILS }),
+    evo: traced('body.evo', 'EVO Main Body', { details: EVO_BODY_DETAILS, weight: 120 }),
+    // The store gives 100 g for the aluminum Mini body and 102 g for the colored ones.
+    mini: traced('body.mini', 'EVO Mini Main Body', { approx: true, details: EVO_MINI_BODY_DETAILS, weight: 101 }),
     sse1: traced('body.sse1', 'SSe-1 Main Body', { legacy: true }),
     sse3: traced('body.sse3', 'SSe-3 Main Body', { legacy: true }),
     sse2: traced('body.sse2', 'SSe-2 Main Body', { legacy: true }),
   },
   pommel: {
-    evo: traced('pommel.evo', 'EVO Pommel'),
-    mini: traced('pommel.mini', 'EVO Mini Pommel', { approx: true }),
+    evo: traced('pommel.evo', 'EVO Pommel', { weight: 66 }),
+    mini: traced('pommel.mini', 'EVO Mini Pommel', { approx: true, weight: 38 }),
     adaptor: traced('pommel.adaptor', 'Pommel Adaptor', { profileExtra: PROFILES['pommel.adaptor.extra'] }),
     sse1: traced('pommel.sse1', 'SSe-1 Pommel', { legacy: true }),
     sse3std: traced('pommel.sse3std', 'SSe-3 Pommel (standard mask)', { legacy: true }),
@@ -135,10 +141,10 @@ export const MODELS: Record<PartKind, Record<string, PartModel>> = {
     maori: { name: 'EVO Coupler Maori (limited)', len: 70, profile: EVO_COUPLER, details: EVO_COUPLER_DETAILS, mark: 'tribe' },
   },
   ring: {
-    plain: ring('Plain Ring 10 mm', 10),
-    thin: ring('Thin Ring 3.3 mm', 3.3),
-    logo: ring('LamaDiLuce Ring', 10, { mark: 'star' }),
-    tribe: ring('Ring Tribe', 10, { mark: 'tribe' }),
+    plain: ring('Plain Ring 10 mm', 10, { weight: 4 }),
+    thin: ring('Thin Ring 3.3 mm', 3.3, { weight: 1.3 }),
+    logo: ring('LamaDiLuce Ring', 10, { mark: 'star', weight: 4 }),
+    tribe: ring('Ring Tribe', 10, { mark: 'tribe', weight: 4 }),
   },
 };
 

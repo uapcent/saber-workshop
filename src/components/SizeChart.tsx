@@ -28,8 +28,9 @@ export function SizeChart({ sabers, totals }: { sabers: Saber[]; totals: Totals[
   ];
   const limits = [180, 260, 320];
   if (anyStaff) {
-    bands.push([410, 540, 0.05, 'STAFF']);
-    limits.push(410, 540);
+    // INCOM ITR 4.0.3: staff hilt 360 to 540 mm (± 2 mm tolerance).
+    bands.push([360, 540, 0.05, 'STAFF']);
+    limits.push(360, 540);
   }
   const ticks = Array.from({ length: top / 10 + 1 }, (_, i) => i * 10);
 

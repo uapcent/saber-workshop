@@ -74,12 +74,19 @@ export interface Totals {
   discontinued: number;
   /** Overall hilt length in mm (both halves and coupler for a staff). */
   length: number;
+  /** Weight in grams of the hilt parts whose weight is known (no Anima, weights or blade). */
+  weight: number;
+  /** Names of the parts with no known weight. */
+  unweighed: string[];
 }
 
 export function totals(s: Saber): Totals {
   const rows = partRows(s);
-  const t: Totals = { rows, store: 0, bases: 0, toCoat: 0, outOfStock: 0, discontinued: 0, length: 0 };
+  const t: Totals = { rows, store: 0, bases: 0, toCoat: 0, outOfStock: 0, discontinued: 0, length: 0, weight: 0, unweighed: [] };
   for (const r of rows) {
+    const model = MODELS[r.kind][r.choice.model];
+    if (model.weight === undefined) t.unweighed.push(model.name);
+    else t.weight += model.weight * r.quantity;
     const st = r.status;
     if (st.kind === 'legacy') t.discontinued += r.quantity;
     else if (st.kind === 'store') {
@@ -95,7 +102,7 @@ export function totals(s: Saber): Totals {
   return t;
 }
 
-/* ---------- Polaris length classes (InCom tolerance ±2 mm) ---------- */
+/* ---------- Tournament rules: INCOM ITR 4.0.3, rule 4.1 (ranges include the tolerance) ---------- */
 
 type LengthClass = 'Under 18 cm' | 'Short' | 'Short or Long' | 'Long' | 'Between Long and Staff' | 'Staff' | 'Over 54 cm';
 
@@ -104,16 +111,41 @@ function classOf(mm: number): LengthClass {
   if (mm < 258) return 'Short';
   if (mm <= 262) return 'Short or Long';
   if (mm <= 322) return 'Long';
-  if (mm < 408) return 'Between Long and Staff';
+  if (mm < 358) return 'Between Long and Staff';
   if (mm <= 542) return 'Staff';
   return 'Over 54 cm';
 }
 
 const FITS: Record<Style, { ok: LengthClass[]; want: string }> = {
-  sword: { ok: ['Long', 'Short or Long'], want: 'Long class (26 to 32 cm)' },
-  dagger: { ok: ['Short', 'Short or Long'], want: 'Short class (18 to 26 cm)' },
-  staff: { ok: ['Staff'], want: 'Staff class (41 to 54 cm)' },
+  sword: { ok: ['Long', 'Short or Long'], want: 'Long class (25.8 to 32.2 cm)' },
+  dagger: { ok: ['Short', 'Short or Long'], want: 'Short class (17.8 to 26.2 cm)' },
+  staff: { ok: ['Staff'], want: 'Staff class (35.8 to 54.2 cm)' },
 };
+
+/** Hilt weight without the blade, in grams: the whole staff, or each dagger. */
+export const HILT_WEIGHT: Record<Style, [min: number, max: number]> = {
+  sword: [440, 730],
+  dagger: [340, 630],
+  staff: [520, 830],
+};
+
+const grams = (g: number) => `${Math.round(g)} g`;
+
+/**
+ * Weight of the hilt parts against the rule. Only the parts are counted (no Anima or balance weights), so
+ * a light build is fine (weights make it up) and only a build already over the maximum is a problem.
+ */
+export function weightCheck(t: Totals, style: Style): { text: string; problem?: string } {
+  const [min, max] = HILT_WEIGHT[style];
+  const unknown = [...new Set(t.unweighed)];
+  const parts = unknown.length ? `at least ${grams(t.weight)}` : grams(t.weight);
+  const text = `${parts} · rule ${min} to ${max} g`;
+  if (t.weight > max) {
+    const what = STYLES[style].name.toLowerCase();
+    return { text, problem: `The hilt parts weigh ${parts}, over the ${max} g maximum for a ${what}, before the Anima.` };
+  }
+  return { text };
+}
 
 export function lengthClass(mm: number, style: Style): { name: LengthClass; problem?: string } {
   const name = classOf(mm);
@@ -134,6 +166,8 @@ export function warnings(s: Saber, t: Totals = totals(s)): string[] {
   }
   const problem = lengthClass(t.length, s.style).problem;
   if (problem) w.push(problem);
+  const heavy = weightCheck(t, s.style).problem;
+  if (heavy) w.push(heavy);
   return w;
 }
 

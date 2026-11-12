@@ -1,6 +1,15 @@
 import { useEffect, useRef, type Dispatch, type ReactNode } from 'react';
 import { MODELS, PART_LABEL } from '../data/models';
-import { cm, eur, finishOf, lengthClass, partStatus, type PartStatus, type Totals } from '../lib/saber';
+import { cm, eur, finishOf, lengthClass, partStatus, weightCheck, type PartStatus, type Totals } from '../lib/saber';
+
+/** What the weight counts, and which parts it is missing. */
+function weightTitle(t: Totals): string {
+  const unknown = [...new Set(t.unweighed)];
+  return (
+    'Empty hilt parts, from the store. The rule weighs the hilt without the blade, so the Anima and balance weights add to this.' +
+    (unknown.length ? ` No weight known for: ${unknown.join(', ')}.` : '')
+  );
+}
 import { MAX_RINGS, type Action } from '../state/workshop';
 import type { PartChoice, PartKind, RingSlot, Saber } from '../types';
 import type { PartKey } from './graphics/Hilt';
@@ -172,6 +181,10 @@ export function PartsPanel({ saber, totals: t, selected, onSelect, dispatch }: P
           <span>
             {cm(t.length)} cm · {lengthClass(t.length, saber.style).name}
           </span>
+        </div>
+        <div className="small" title={weightTitle(t)}>
+          <span>Hilt parts weight</span>
+          <span>{weightCheck(t, saber.style).text}</span>
         </div>
       </div>
     </div>
