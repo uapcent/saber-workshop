@@ -7,7 +7,8 @@ import { SaberGraphic } from './graphics/SaberGraphic';
 interface Props {
   saber: Saber;
   totals: Totals;
-  interaction: HiltInteraction;
+  /** Clickable parts; without it the card is a still picture (e.g. a shared saber's preview). */
+  interaction?: HiltInteraction;
 }
 
 const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? 's' : ''}`;
@@ -36,10 +37,12 @@ export function SaberCard({ saber, totals: t, interaction }: Props) {
             {w}
           </div>
         ))}
-        <div className="hint">
-          <span className="hint-mouse">Click a part of the hilt to edit it.</span>
-          <span className="hint-touch">Tap a part of the hilt to edit it.</span>
-        </div>
+        {interaction && (
+          <div className="hint">
+            <span className="hint-mouse">Click a part of the hilt to edit it.</span>
+            <span className="hint-touch">Tap a part of the hilt to edit it.</span>
+          </div>
+        )}
       </div>
     </div>
   );

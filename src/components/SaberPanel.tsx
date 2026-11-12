@@ -1,6 +1,7 @@
 import { useState, type Dispatch } from 'react';
 import { BLADE_COLORS, PRESETS, STYLES } from '../data/models';
-import { encodeSaber } from '../lib/saber';
+import { shareLink } from '../lib/saber';
+import { isMuted, playIgnition, playRetraction, setMuted } from '../lib/sound';
 import { MAX_SABERS, type Action } from '../state/workshop';
 import type { Saber, Style } from '../types';
 import { Menu } from './Menu';
@@ -14,23 +15,23 @@ interface Props {
 }
 
 function ShareBox({ saber, notify }: { saber: Saber; notify: (m: string) => void }) {
-  const code = encodeSaber(saber);
+  const link = shareLink(saber);
   return (
     <div className="share-box">
-      <div className="menu-heading">Share code</div>
-      <textarea readOnly value={code} aria-label="Share code" onFocus={(e) => e.target.select()} autoFocus />
+      <div className="menu-heading">Share link</div>
+      <textarea readOnly value={link} aria-label="Share link" onFocus={(e) => e.target.select()} autoFocus />
       <button
         className="btn primary"
         onClick={() =>
           navigator.clipboard
-            .writeText(code)
-            .then(() => notify('Share code copied.'))
-            .catch(() => notify('Select the code and copy it.'))
+            .writeText(link)
+            .then(() => notify('Share link copied.'))
+            .catch(() => notify('Select the link and copy it.'))
         }
       >
-        Copy code
+        Copy link
       </button>
-      <div className="small">Anyone can open it with Add saber › Open a share code.</div>
+      <div className="small">The link opens this saber in the workshop, as a new tab next to the reader's own sabers.</div>
     </div>
   );
 }
@@ -73,7 +74,7 @@ function SaberActions({ saber, index, count, dispatch, notify }: Props) {
               Save to my designs
             </button>
             <button className="menu-item" onClick={() => setView('share')}>
-              Share code…
+              Share link…
             </button>
             <button
               className="menu-item"
@@ -105,6 +106,28 @@ function SaberActions({ saber, index, count, dispatch, notify }: Props) {
   );
 }
 
+function SoundToggle() {
+  const [muted, setMutedState] = useState(isMuted);
+  return (
+    <button
+      type="button"
+      className="btn icon ghost sound-toggle"
+      aria-pressed={!muted}
+      aria-label={muted ? 'Blade sounds off' : 'Blade sounds on'}
+      title={muted ? 'Blade sounds off' : 'Blade sounds on'}
+      onClick={() => {
+        setMuted(!muted);
+        setMutedState(!muted);
+      }}
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M11 5 6 9H3v6h3l5 4z" />
+        {muted ? <path d="m16 9 5 6m0-6-5 6" /> : <path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" />}
+      </svg>
+    </button>
+  );
+}
+
 /** Everything about the saber that isn't a part: name, style and blade. */
 export function SaberPanel(props: Props) {
   const { saber, dispatch } = props;
@@ -130,9 +153,20 @@ export function SaberPanel(props: Props) {
       </div>
 
       <div className="blade-row">
-        <label className="chk" title={STYLES[saber.style].blade}>
-          <input type="checkbox" checked={saber.blade.on} onChange={(e) => dispatch({ type: 'setBlade', on: e.target.checked })} /> Blade
-        </label>
+        <div className="row">
+          <label className="chk" title={STYLES[saber.style].blade}>
+            <input
+              type="checkbox"
+              checked={saber.blade.on}
+              onChange={(e) => {
+                (e.target.checked ? playIgnition : playRetraction)();
+                dispatch({ type: 'setBlade', on: e.target.checked });
+              }}
+            />{' '}
+            Blade
+          </label>
+          <SoundToggle />
+        </div>
         <div className="row">
           {BLADE_COLORS.map((color) => (
             <button

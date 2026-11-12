@@ -1,4 +1,5 @@
-import { CATALOG, FINISHES } from '../data/catalog';
+import { useEffect, useState } from 'react';
+import { FINISHES, SNAPSHOT, applyLivePrices, type LivePrices } from '../data/catalog';
 import { MODELS } from '../data/models';
 import type { PartKind } from '../types';
 
@@ -13,9 +14,13 @@ const API = 'https://lamadiluce.it/wp-json/wc/store/v1/products';
 const PART_CATEGORIES = ['emitters', 'main-bodies', 'pommels', 'rings', 'couplers'];
 /** "Polaris EVO Mini Main Body – Mk90", "Polaris NXT Emitter – Solar Eclipse"… but not "Polaris EVO Hilt" or "Basic". */
 const PART_NAME = /^Polaris\b.*\b(Emitter|Main Body|Pommel|Rings?|Coupler)\b/i;
-/** The full product list is slow to fetch (several seconds), so a result is reused for an hour. */
-const CACHE_KEY = 'saberWorkshop.storeCheck';
-const CACHE_MS = 60 * 60 * 1000;
+/**
+ * The full product list is slow to fetch (several pages, several seconds) and the store changes slowly,
+ * so one check a day is kept in localStorage and reused by every visit and tab until the date changes.
+ */
+const CACHE_KEY = 'saberWorkshop.storeCheck.daily';
+const OLD_CACHE_KEY = 'saberWorkshop.storeCheck';
+const today = () => new Date().toDateString();
 
 interface StoreProduct {
   id: number;
@@ -37,6 +42,14 @@ export interface StoreUpdate {
   url: string;
 }
 
+export interface StoreCheck {
+  /** When the store was read (ms since epoch). */
+  time: number;
+  updates: StoreUpdate[];
+  /** Price and stock of every catalog product the store still lists. */
+  live: LivePrices;
+}
+
 const decode = (html: string) => new DOMParser().parseFromString(html, 'text/html').documentElement.textContent ?? html;
 const eur = (n: number) => '€' + n.toFixed(2).replace('.', ',');
 const productUrl = (id: number) => `https://lamadiluce.it/?post_type=product&p=${id}`;
@@ -56,7 +69,7 @@ async function fetchProducts(): Promise<StoreProduct[]> {
 /** Our name for a catalog entry, e.g. "EVO Emitter · Lunar Mist". */
 function catalogEntries() {
   const entries = new Map<number, { name: string; price: number; inStock: boolean }>();
-  for (const [part, listings] of Object.entries(CATALOG)) {
+  for (const [part, listings] of Object.entries(SNAPSHOT)) {
     const [kind, model] = part.split('.') as [PartKind, string];
     for (const [finish, l] of Object.entries(listings)) {
       const finishName = Object.keys(listings).length > 1 || finish !== 'aluminum' ? ` · ${FINISHES[finish].name}` : '';
@@ -67,31 +80,58 @@ function catalogEntries() {
 }
 
 /** Hilt parts in the store but not in the app, and stock, price or listing changes for the ones we have. */
-export async function checkStore(): Promise<StoreUpdate[]> {
+let pending: Promise<StoreCheck> | null = null;
+
+export async function checkStore(): Promise<StoreCheck> {
   try {
-    const cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) ?? 'null');
-    if (cached && Date.now() - cached.time < CACHE_MS) return cached.updates;
+    sessionStorage.removeItem(OLD_CACHE_KEY);
+    const cached: StoreCheck | null = JSON.parse(localStorage.getItem(CACHE_KEY) ?? 'null');
+    if (cached?.live && new Date(cached.time).toDateString() === today()) return cached;
   } catch {
     /* no cache */
   }
-  const updates = compare(await fetchProducts());
+  // Calls made while a check is running (React's second effect run, say) wait for it instead of starting another.
+  const check = await (pending ??= fetchProducts().then(compare).finally(() => (pending = null)));
   try {
-    sessionStorage.setItem(CACHE_KEY, JSON.stringify({ time: Date.now(), updates }));
+    localStorage.setItem(CACHE_KEY, JSON.stringify(check));
   } catch {
-    /* not cached */
+    /* not cached: the next visit checks again */
   }
-  return updates;
+  return check;
 }
 
-function compare(products: StoreProduct[]): StoreUpdate[] {
+export type StoreState = { status: 'checking' } | { status: 'failed' } | ({ status: 'live' } & StoreCheck);
+
+/** Reads the store once, overlays its prices and stock on the catalog, and re-renders when they arrive. */
+export function useStoreCheck(): StoreState {
+  const [state, setState] = useState<StoreState>({ status: 'checking' });
+  useEffect(() => {
+    let alive = true;
+    checkStore()
+      .then((check) => {
+        if (!alive) return;
+        applyLivePrices(check.live);
+        setState({ status: 'live', ...check });
+      })
+      .catch(() => alive && setState({ status: 'failed' }));
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return state;
+}
+
+function compare(products: StoreProduct[]): StoreCheck {
   const known = catalogEntries();
   const updates: StoreUpdate[] = [];
+  const live: LivePrices = {};
   const listed = new Set<number>();
 
   for (const p of products) {
     listed.add(p.id);
     const price = Number(p.prices.price) / 10 ** p.prices.currency_minor_unit;
     const ours = known.get(p.id);
+    if (ours) live[p.id] = [price, p.is_in_stock];
     if (!ours) {
       const slugs = p.categories.map((c) => c.slug);
       // Limited, members-only and uncategorized parts sit outside the part categories, so match their names too.
@@ -131,5 +171,5 @@ function compare(products: StoreProduct[]): StoreUpdate[] {
       updates.push({ key: `gone:${id}`, kind: 'gone', title: ours.name, detail: 'No longer listed in the store', url: productUrl(id) });
     }
   }
-  return updates;
+  return { time: Date.now(), updates, live };
 }

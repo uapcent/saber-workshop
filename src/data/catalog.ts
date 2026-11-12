@@ -53,7 +53,14 @@ export interface Listing {
   id: number;
   price: number;
   inStock: boolean;
+  /** Live data only: the catalog price, when the store's price differs from it. */
+  was?: number;
+  /** Live data only: false when the store no longer lists the product. */
+  listed?: boolean;
 }
+
+/** When the built-in catalog was read from the store. */
+export const CATALOG_DATE = '9 Nov 2026';
 
 type RawListings = Record<string, [id: number, price: number, inStock: 0 | 1]>;
 
@@ -77,7 +84,8 @@ const RAW_CATALOG: Record<string, RawListings> = {
   'coupler.maori': { aluminum: [5275, 55, 1] },
 };
 
-export const CATALOG: Record<string, Record<string, Listing>> = Object.fromEntries(
+/** The built-in catalog, as read from the store on CATALOG_DATE. Never changes. */
+export const SNAPSHOT: Record<string, Record<string, Readonly<Listing>>> = Object.fromEntries(
   Object.entries(RAW_CATALOG).map(([part, listings]) => [
     part,
     Object.fromEntries(
@@ -85,5 +93,23 @@ export const CATALOG: Record<string, Record<string, Listing>> = Object.fromEntri
     ),
   ]),
 );
+
+/** The catalog the app prices with: the snapshot, updated with live store data once it arrives. */
+export const CATALOG: Record<string, Record<string, Listing>> = structuredClone(SNAPSHOT);
+
+/** Live store data per product id: [price €, in stock]. */
+export type LivePrices = Record<number, [price: number, inStock: boolean]>;
+
+/** Overlays live store prices and stock on CATALOG (products missing from `live` are marked unlisted). */
+export function applyLivePrices(live: LivePrices) {
+  for (const [part, listings] of Object.entries(SNAPSHOT)) {
+    for (const [finish, base] of Object.entries(listings)) {
+      const now = live[base.id];
+      CATALOG[part][finish] = now
+        ? { ...base, price: now[0], inStock: now[1], ...(Math.abs(now[0] - base.price) > 0.005 && { was: base.price }) }
+        : { ...base, inStock: false, listed: false };
+    }
+  }
+}
 
 export const productUrl = (id: number) => `https://lamadiluce.it/?post_type=product&p=${id}`;

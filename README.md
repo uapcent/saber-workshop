@@ -25,11 +25,16 @@ Every push to `main` builds the site and publishes it to GitHub Pages (`.github/
 
 - `src/data/catalog.ts` – finishes, store prices, stock and product ids.
 - `src/data/models.ts` – part models, styles, blade colors and presets.
-- `src/lib/saber.ts` – store status, totals, length classes, warnings and share codes.
+- `src/lib/saber.ts` – store status, totals, length classes, warnings, share codes and share links (`#s=<code>`).
+- `src/lib/sound.ts` – blade sounds: power-on, a few seconds of hum, power-off (Web Audio API).
+- `public/sounds/` – those sounds as WAV, converted from the public OpenCore OEM sound font's `POWERON_0`, `HUM_0` and
+  `POWEROFF_0` RAW files (16-bit mono, 44.1 kHz).
+- `src/components/SharePreview.tsx` – a saber opened from a share link, shown before the reader adds or saves it.
 - `src/lib/geometry.ts`, `src/lib/color.ts` – outline paths and shading.
 - `src/components/graphics/` – SVG rendering of hilts, blades and whole sabers.
 - `src/components/` – top bar (saber tabs, Add saber menu), Parts and Saber panels, pinned saber, compare section, shopping list.
-- `src/lib/storeFeed.ts` – the store-updates bell: reads lamadiluce.it's public WooCommerce product feed in the browser and compares it with the catalog (new hilt parts, stock and price changes).
+- `src/lib/storeFeed.ts` – the store-updates bell: reads lamadiluce.it's public WooCommerce product feed in the browser and compares it with the catalog (new hilt parts, stock and price changes), and overlays the store's current prices and stock on the catalog so totals use them. The check runs once a day per
+  browser (cached in localStorage until the date changes).
 - `src/state/workshop.ts` – app state (1 to 4 sabers, saved designs) and localStorage persistence.
 - `docs/phone-layout.md` – notes for a future phone layout (not implemented).
 - `data/profiles.json` – part outlines as `[x mm from the pommel side, radius mm]` pairs, imported by the app.
@@ -40,11 +45,13 @@ Every push to `main` builds the site and publishes it to GitHub Pages (`.github/
   (LamaDiLuce's material): to rerun `build_details.py`, save the official "Polaris Modular Hilts" size
   chart (725 × 1024 px) as `reference/polaris-size-chart.png`.
 
-Saved designs and share codes from the original version still work (same storage key and code format).
+Saved designs and share codes from the original version still work (same storage key and code format): the paste box
+accepts both share links and bare codes.
 
 ## Where the numbers come from
 
-- **Prices and stock:** lamadiluce.it store, 9 Nov 2026 (in `src/data/catalog.ts`).
+- **Prices and stock:** lamadiluce.it store, 9 Nov 2026 (in `src/data/catalog.ts`), replaced by the live store's once it
+  has been read (falls back to the snapshot if the store can't be reached).
 - **Finish colors:** sampled from the store's product photos (shadow, body and highlight tones of the
   part's pixels). EVO "Microtextured Color" finishes are drawn matte with a fine grain, thin rings glossy.
   Solar Flare is estimated (its only photo shows a lit saber).

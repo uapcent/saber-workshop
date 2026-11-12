@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef, useState } from 'react';
 import { BLADE_RADIUS, STYLES } from '../../data/models';
 import { lighten } from '../../lib/color';
 import { useSvgId } from '../../lib/geometry';
@@ -14,6 +15,27 @@ function tubePath(length: number, r: number, tip: boolean): string {
   if (!tip) return `M0,${-r} H${length} V${r} H0 Z`;
   const t = Math.min(r * 1.15, length); // slightly elongated dome, like a LudoSport tip
   return `M0,${-r} H${length - t} A${t},${r} 0 0 1 ${length - t},${r} H0 Z`;
+}
+
+/** Ignition and retraction times; keep in step with the blade-ignite / blade-retract keyframes in styles.css. */
+const IGNITE_MS = 380;
+const RETRACT_MS = 480;
+
+type BladeMotion = 'still' | 'ignite' | 'retract';
+
+/** Animates a blade when it is switched on or off (not when it first appears). */
+function useBladeMotion(on: boolean): BladeMotion {
+  const prev = useRef(on);
+  const [motion, setMotion] = useState<BladeMotion>('still');
+  // Layout effect: the first frame after the switch is already the animation's first frame.
+  useLayoutEffect(() => {
+    if (prev.current === on) return;
+    prev.current = on;
+    setMotion(on ? 'ignite' : 'retract');
+    const timer = window.setTimeout(() => setMotion('still'), on ? IGNITE_MS : RETRACT_MS);
+    return () => window.clearTimeout(timer);
+  }, [on]);
+  return motion;
 }
 
 interface BladeProps {
@@ -35,6 +57,9 @@ function Blade({ id, defs, x, direction, length, color, on, cut }: BladeProps) {
   const L = (cut ? STUB : length) + SEAT;
   const r = BLADE_RADIUS;
   const tip = !cut;
+  const motion = useBladeMotion(on);
+  const lit = on || motion === 'retract';
+  const unlit = !on || motion === 'ignite';
   const maskId = `${id}-cut`;
   const fadeId = `${id}-fade`;
   return (
@@ -50,17 +75,19 @@ function Blade({ id, defs, x, direction, length, color, on, cut }: BladeProps) {
           </mask>
         </defs>
       )}
-      {on ? (
-        <>
-          <g filter={`url(#${defs}-glow)`} opacity={0.9}>
+      {unlit && (
+        // Unlit: frosted polycarbonate tube (stays visible while the light runs up or down it).
+        <path d={tubePath(L, r, tip)} fill={`url(#${defs}-off)`} stroke="rgba(255,255,255,.22)" strokeWidth={0.5} />
+      )}
+      {lit && (
+        // The light grows out of the emitter (x = 0 here) on ignition and sinks back into it on retraction.
+        <g className={'blade-light' + (motion === 'still' ? '' : ` blade-${motion}`)}>
+          <g className="blade-glow" filter={`url(#${defs}-glow)`} opacity={0.9}>
             <path d={tubePath(L, r + 5, tip)} fill={color} />
           </g>
           <path d={tubePath(L, r, tip)} fill={lighten(color, 0.45)} />
           <path d={tubePath(L, r * 0.55, tip)} transform={`translate(${tip ? -r * 0.2 : 0},0)`} fill="#ffffff" opacity={0.92} />
-        </>
-      ) : (
-        // Unlit: frosted polycarbonate tube.
-        <path d={tubePath(L, r, tip)} fill={`url(#${defs}-off)`} stroke="rgba(255,255,255,.22)" strokeWidth={0.5} />
+        </g>
       )}
     </g>
   );

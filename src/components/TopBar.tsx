@@ -1,6 +1,8 @@
 import { useState, type Dispatch } from 'react';
+import type { Saber } from '../types';
 import { PRESETS, normalizeSaber } from '../data/models';
-import { decodeSaber } from '../lib/saber';
+import { decodeSaber, shareCodeOf } from '../lib/saber';
+import type { StoreState } from '../lib/storeFeed';
 import { MAX_SABERS, type Action, type WorkshopState } from '../state/workshop';
 import { Menu } from './Menu';
 import { StoreBell } from './StoreBell';
@@ -8,7 +10,9 @@ import { StoreBell } from './StoreBell';
 interface Props {
   state: WorkshopState;
   dispatch: Dispatch<Action>;
-  notify: (message: string) => void;
+  store: StoreState;
+  /** A share link or code was pasted: show its saber (it joins the workshop only if the reader wants). */
+  onShared: (saber: Saber) => void;
 }
 
 /** Paste box inside the Add menu: opens a share code as a new saber. */
@@ -25,8 +29,8 @@ function CodeInput({ onOpen }: { onOpen: (code: string) => boolean }) {
     >
       <input
         type="text"
-        placeholder="Paste a share code"
-        aria-label="Share code"
+        placeholder="Paste a share link"
+        aria-label="Share link or code"
         value={code}
         onChange={(e) => {
           setCode(e.target.value);
@@ -36,25 +40,24 @@ function CodeInput({ onOpen }: { onOpen: (code: string) => boolean }) {
       <button className="btn" type="submit" disabled={!code.trim()}>
         Open
       </button>
-      {error && <div className="menu-error">That code couldn't be read. Copy the whole code and try again.</div>}
+      {error && <div className="menu-error">That link couldn't be read. Copy the whole link and try again.</div>}
     </form>
   );
 }
 
 /** Saber tabs (1 to 4) and the menu to add one from a preset, a saved design or a share code. */
-export function TopBar({ state, dispatch, notify }: Props) {
+export function TopBar({ state, dispatch, store, onShared }: Props) {
   const full = state.slots.length >= MAX_SABERS;
 
   const openCode = (code: string) => {
     let saber = null;
     try {
-      saber = normalizeSaber(decodeSaber(code));
+      saber = normalizeSaber(decodeSaber(shareCodeOf(code)));
     } catch {
       /* not a share code */
     }
     if (!saber) return false;
-    dispatch({ type: 'add', saber });
-    notify(`Opened “${saber.name || 'Untitled'}”.`);
+    onShared(saber);
     return true;
   };
 
@@ -115,14 +118,14 @@ export function TopBar({ state, dispatch, notify }: Props) {
                   </button>
                 </div>
               ))}
-              <div className="menu-heading">Open a share code</div>
+              <div className="menu-heading">Open a share link</div>
               <CodeInput onOpen={(code) => openCode(code) && (close(), true)} />
             </>
           )}
         </Menu>
       </nav>
       <div className="topbar-end">
-        <StoreBell />
+        <StoreBell store={store} />
       </div>
     </header>
   );

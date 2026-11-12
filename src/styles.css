@@ -361,3 +361,54 @@ tfoot td { border-bottom: 0; font-weight: 600; }
   .compare-lower { grid-template-columns: minmax(0, 1fr); }
   .compare-summary { overflow-x: auto; }
 }
+
+/* Live price changed since the catalog */
+.was { font-size: 10px; }
+.was.down { color: var(--ok); }
+.was.up { color: var(--warn); }
+
+/* ---------- Blade ignition ---------- */
+/* The light group's origin is the emitter mouth, so scaling along x grows or shrinks the blade from it. */
+.blade-light { transform-box: view-box; transform-origin: 0 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .blade-ignite { animation: blade-ignite 380ms cubic-bezier(.2, .7, .3, 1) both; }
+  .blade-retract { animation: blade-retract 480ms cubic-bezier(.6, 0, .8, .4) both; }
+  .blade-glow { animation: blade-flicker 2.4s steps(1, end) infinite; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .blade-retract { opacity: 0; }
+}
+@keyframes blade-ignite { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes blade-retract { from { transform: scaleX(1); } 92% { opacity: 1; } to { transform: scaleX(0); opacity: 0; } }
+/* A barely-there unsteadiness in the glow, like a real blade's. */
+@keyframes blade-flicker {
+  0%, 100% { opacity: .9; }
+  37% { opacity: .84; }
+  41% { opacity: .93; }
+  68% { opacity: .87; }
+  72% { opacity: .9; }
+}
+
+/* ---------- Shared saber preview ---------- */
+.share-preview {
+  width: min(860px, calc(100vw - 32px)); max-height: calc(100vh - 48px); padding: 0;
+  background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 14px;
+}
+.share-preview::backdrop { background: rgba(0, 0, 0, .65); }
+.share-preview-body { display: grid; gap: 12px; padding: 16px; }
+.share-preview-head { display: flex; justify-content: space-between; align-items: start; gap: 10px; }
+.share-preview-head h2 { margin: 2px 0 0; }
+.share-preview-head .menu-heading { padding: 0; }
+.share-preview-actions {
+  display: flex; justify-content: flex-end; align-items: center; gap: 8px; flex-wrap: wrap;
+  position: sticky; bottom: 0; margin: 0 -16px -16px; padding: 12px 16px; background: var(--bg); border-top: 1px solid var(--line);
+}
+.share-preview-actions .small { margin-right: auto; }
+
+/* Parts that can't be bought right now (shopping list only) */
+.unavailable {
+  margin: 0 0 10px; font-size: 12.5px; color: var(--warn); padding: 8px 10px;
+  border-left: 2px solid var(--warn); background: rgba(227, 164, 76, .07); border-radius: 0 6px 6px 0;
+}
+.unavailable ul { margin: 4px 0 0; padding-left: 18px; }
+.row-unavailable td:first-child { box-shadow: inset 2px 0 0 var(--warn); }

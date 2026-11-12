@@ -121,6 +121,7 @@ export function FinishSelect({
 export function StatusPill({ status }: { status: PartStatus }) {
   if (status.kind === 'legacy') return <span className="pill p-old">Discontinued</span>;
   if (status.kind === 'coat') return <span className="pill p-coat">Coat it</span>;
+  if (status.listed === false) return <span className="pill p-out">Not listed</span>;
   return status.inStock ? <span className="pill p-ok">In stock</span> : <span className="pill p-out">Out of stock</span>;
 }
 

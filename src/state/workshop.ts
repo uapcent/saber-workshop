@@ -44,6 +44,8 @@ export type Action =
   | { type: 'addRing'; slot: RingSlot }
   | { type: 'removeRing'; slot: RingSlot; index: number }
   | { type: 'save' }
+  /** Keep a saber (e.g. one opened from a share link) in the saved designs without opening it. */
+  | { type: 'saveSaber'; saber: Saber }
   | { type: 'deleteSaved'; index: number };
 
 const copy = <T,>(o: T): T => structuredClone(o);
@@ -52,6 +54,10 @@ const newSlot = (saber: Saber, compare = true): Slot => ({ uid: `s${Date.now().t
 
 function withActive(state: WorkshopState, update: (s: Saber) => Saber): WorkshopState {
   return { ...state, slots: state.slots.map((slot, i) => (i === state.active ? { ...slot, saber: update(slot.saber) } : slot)) };
+}
+
+function saveDesign(state: WorkshopState, s: Saber): WorkshopState {
+  return { ...state, saved: [{ name: s.name || 'Untitled', saber: copy(s) }, ...state.saved].slice(0, MAX_SAVED) };
 }
 
 function reducer(state: WorkshopState, action: Action): WorkshopState {
@@ -100,10 +106,10 @@ function reducer(state: WorkshopState, action: Action): WorkshopState {
       });
     case 'removeRing':
       return withActive(state, (s) => ({ ...s, [action.slot]: s[action.slot].filter((_, i) => i !== action.index) }));
-    case 'save': {
-      const s = state.slots[state.active].saber;
-      return { ...state, saved: [{ name: s.name || 'Untitled', saber: copy(s) }, ...state.saved].slice(0, MAX_SAVED) };
-    }
+    case 'save':
+      return saveDesign(state, state.slots[state.active].saber);
+    case 'saveSaber':
+      return saveDesign(state, action.saber);
     case 'deleteSaved':
       return { ...state, saved: state.saved.filter((_, i) => i !== action.index) };
   }

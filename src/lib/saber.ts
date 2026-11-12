@@ -145,6 +145,28 @@ export function encodeSaber(s: Saber): string {
 }
 
 export function decodeSaber(code: string): unknown {
-  const bytes = Uint8Array.from(atob(code.trim()), (c) => c.charCodeAt(0));
+  // Links carry the code in URL-safe base64 (- and _ instead of + and /, no padding).
+  const b64 = code.trim().replace(/-/g, '+').replace(/_/g, '/');
+  const bytes = Uint8Array.from(atob(b64 + '='.repeat((4 - (b64.length % 4)) % 4)), (c) => c.charCodeAt(0));
   return JSON.parse(new TextDecoder().decode(bytes));
+}
+
+/* ---------- Share links: the share code in the URL hash, #s=<code> ---------- */
+
+const LINK_HASH = /#s=([A-Za-z0-9+/=_-]+)/;
+
+/** A link to this page that opens the saber. */
+export function shareLink(s: Saber): string {
+  const code = encodeSaber(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return `${location.origin}${location.pathname}#s=${code}`;
+}
+
+/** The share code inside a pasted link (or the text itself, for a bare v1 share code). */
+export function shareCodeOf(text: string): string {
+  return text.match(LINK_HASH)?.[1] ?? text.trim();
+}
+
+/** The share code in the current URL, if it is a share link. */
+export function shareCodeInUrl(): string | null {
+  return location.hash.match(LINK_HASH)?.[1] ?? null;
 }

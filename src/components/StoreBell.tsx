@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
-import { checkStore, type StoreUpdate, type UpdateKind } from '../lib/storeFeed';
+import { useState } from 'react';
+import { CATALOG_DATE } from '../data/catalog';
+import type { StoreState, UpdateKind } from '../lib/storeFeed';
 import { Menu } from './Menu';
 
 /** Updates already opened in this browser, so the badge only counts what's new to you. */
@@ -31,20 +32,10 @@ function BellIcon() {
 }
 
 /** Top-bar bell: live comparison of the store with the workshop's catalog. */
-export function StoreBell() {
-  const [updates, setUpdates] = useState<StoreUpdate[] | null>(null);
-  const [failed, setFailed] = useState(false);
+export function StoreBell({ store }: { store: StoreState }) {
   const [seen, setSeen] = useState(readSeen);
-
-  useEffect(() => {
-    let alive = true;
-    checkStore()
-      .then((u) => alive && setUpdates(u))
-      .catch(() => alive && setFailed(true));
-    return () => {
-      alive = false;
-    };
-  }, []);
+  const updates = store.status === 'live' ? store.updates : null;
+  const failed = store.status === 'failed';
 
   const unseen = updates?.filter((u) => !seen.has(u.key)).length ?? 0;
 
@@ -75,7 +66,7 @@ export function StoreBell() {
       {() => (
         <div className="bell-panel">
           <div className="bell-title">Store updates</div>
-          {failed && <div className="menu-empty">Couldn't reach lamadiluce.it. Prices and stock are from 9 Nov 2026.</div>}
+          {failed && <div className="menu-empty">Couldn't reach lamadiluce.it. Prices and stock are from {CATALOG_DATE}.</div>}
           {!failed && !updates && <div className="menu-empty">Checking the store…</div>}
           {updates?.length === 0 && <div className="menu-empty">Everything matches the store: no new parts, same prices and stock.</div>}
           {updates &&
@@ -95,7 +86,7 @@ export function StoreBell() {
               );
             })}
           {updates && updates.length > 0 && (
-            <div className="bell-foot">Compared with the workshop's catalog of 9 Nov 2026. Links open the store.</div>
+            <div className="bell-foot">Compared with the workshop's catalog of {CATALOG_DATE}. The workshop now prices with the store's current prices and stock. Links open the store.</div>
           )}
         </div>
       )}
