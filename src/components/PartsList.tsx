@@ -2,7 +2,7 @@ import { productUrl } from '../data/catalog';
 import { MODELS } from '../data/models';
 import { eur, finishOf, type PartRow, type Totals } from '../lib/saber';
 import type { Saber } from '../types';
-import { StatusPill, Swatch } from './PartPickers';
+import { StatusPill, StoreTags, Swatch } from './PartPickers';
 
 function StoreLink({ id, children }: { id: number; children: string }) {
   return (
@@ -49,6 +49,7 @@ function Row({ row }: { row: PartRow }) {
       </td>
       <td>
         <StatusPill status={st} />
+        <StoreTags status={st} />
         {link}
       </td>
       <td className="num">{price}</td>

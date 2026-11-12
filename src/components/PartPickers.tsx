@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { CATALOG, FINISHES } from '../data/catalog';
+import { CATALOG, FINISHES, type Listing } from '../data/catalog';
 import { MODELS } from '../data/models';
 import { customColor, eur, finishOf, isCustomColor, type PartStatus } from '../lib/saber';
 import type { FinishKey, PartKind } from '../types';
@@ -106,7 +106,7 @@ export function FinishSelect({
       {open && (
         <div className="finish-list" role="listbox" aria-label="Finishes">
           <div className="finish-group">Sold for this part</div>
-          {Object.entries(listings).map(([k, l]) => option(k, eur(l.price) + (l.inStock ? '' : ' · out of stock')))}
+          {Object.entries(listings).map(([k, l]) => option(k, listingNote(l)))}
           {otherStoreColors.length > 0 && <div className="finish-group">Store colors, not sold for this part</div>}
           {otherStoreColors.map((k) => option(k, 'coat'))}
           <div className="finish-group">Custom coating</div>
@@ -118,6 +118,37 @@ export function FinishSelect({
   );
 }
 
+/** Percent off while a listing is on sale. */
+const percentOff = (l: Listing) => (l.regular ? Math.round((1 - l.price / l.regular) * 100) : 0);
+
+/** Short note for a listing in the finish list: price, then sale, limited and stock. */
+function listingNote(l: Listing): string {
+  return [eur(l.price), l.regular && `−${percentOff(l)}%`, l.limited && 'limited', !l.inStock && 'out of stock'].filter(Boolean).join(' · ');
+}
+
+/** Store tags of a listing: on sale (with the percent off) and limited edition. */
+export function StoreTags({ status }: { status: PartStatus }) {
+  if (status.kind !== 'store') return null;
+  return (
+    <>
+      {status.regular !== undefined && (
+        <>
+          {' '}
+          <span className="pill p-sale" title={`On sale, regular price ${eur(status.regular)}`}>
+            Sale −{percentOff(status)}%
+          </span>
+        </>
+      )}
+      {status.limited && (
+        <>
+          {' '}
+          <span className="pill p-limited">Limited</span>
+        </>
+      )}
+    </>
+  );
+}
+
 export function StatusPill({ status }: { status: PartStatus }) {
   if (status.kind === 'legacy') return <span className="pill p-old">Discontinued</span>;
   if (status.kind === 'coat') return <span className="pill p-coat">Coat it</span>;
@@ -126,15 +157,24 @@ export function StatusPill({ status }: { status: PartStatus }) {
 }
 
 export function StatusLine({ status }: { status: PartStatus }) {
-  let detail: string;
+  let detail: React.ReactNode;
   if (status.kind === 'legacy') detail = 'Not in the store. Use it if you already own one.';
-  else if (status.kind === 'store') detail = eur(status.price);
+  else if (status.kind === 'store')
+    detail =
+      status.regular !== undefined ? (
+        <>
+          {eur(status.price)} <s className="small">{eur(status.regular)}</s>
+        </>
+      ) : (
+        eur(status.price)
+      );
   else if (status.base)
     detail = `Not sold in this finish. Base part in aluminum ${eur(status.base.price)}${status.base.inStock ? '' : ' (out of stock)'}`;
   else detail = 'Not sold in this finish';
   return (
     <div className="status">
       <StatusPill status={status} />
+      <StoreTags status={status} />
       <span>{detail}</span>
     </div>
   );

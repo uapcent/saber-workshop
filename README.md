@@ -33,7 +33,7 @@ Every push to `main` builds the site and publishes it to GitHub Pages (`.github/
 - `src/lib/geometry.ts`, `src/lib/color.ts` – outline paths and shading.
 - `src/components/graphics/` – SVG rendering of hilts, blades and whole sabers.
 - `src/components/` – top bar (saber tabs, Add saber menu), Parts and Saber panels, pinned saber, compare section, shopping list.
-- `src/lib/storeFeed.ts` – the store-updates bell: reads lamadiluce.it's public WooCommerce product feed in the browser and compares it with the catalog (new hilt parts, stock and price changes), and overlays the store's current prices and stock on the catalog so totals use them. The check runs once a day per
+- `src/lib/storeFeed.ts` – the store-updates bell: reads lamadiluce.it's public WooCommerce product feed in the browser and compares it with the catalog (new hilt parts, stock and price changes), lists every product on sale in the whole store (sabers and parts apart from accessories and clothing), and overlays the store's current prices, stock, sales and Limited Edition tags on the catalog so totals and parts use them. The check runs once a day per
   browser (cached in localStorage until the date changes).
 - `src/state/workshop.ts` – app state (1 to 4 sabers, saved designs) and localStorage persistence.
 - `docs/phone-layout.md` – notes for a future phone layout (not implemented).

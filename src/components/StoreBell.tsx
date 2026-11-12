@@ -15,6 +15,8 @@ function readSeen(): Set<string> {
 }
 
 const SECTIONS: { kinds: UpdateKind[]; title: string }[] = [
+  { kinds: ['sale-part'], title: 'On sale · sabers and parts' },
+  { kinds: ['sale-other'], title: 'On sale · everything else' },
   { kinds: ['new'], title: 'In the store, not in the workshop yet' },
   { kinds: ['in-stock'], title: 'Back in stock' },
   { kinds: ['out-of-stock'], title: 'Now out of stock' },
@@ -68,7 +70,7 @@ export function StoreBell({ store }: { store: StoreState }) {
           <div className="bell-title">Store updates</div>
           {failed && <div className="menu-empty">Couldn't reach lamadiluce.it. Prices and stock are from {CATALOG_DATE}.</div>}
           {!failed && !updates && <div className="menu-empty">Checking the store…</div>}
-          {updates?.length === 0 && <div className="menu-empty">Everything matches the store: no new parts, same prices and stock.</div>}
+          {updates?.length === 0 && <div className="menu-empty">Nothing on sale, and everything matches the store: no new parts, same prices and stock.</div>}
           {updates &&
             SECTIONS.map(({ kinds, title }) => {
               const items = updates.filter((u) => kinds.includes(u.kind));
@@ -86,7 +88,7 @@ export function StoreBell({ store }: { store: StoreState }) {
               );
             })}
           {updates && updates.length > 0 && (
-            <div className="bell-foot">Compared with the workshop's catalog of {CATALOG_DATE}. The workshop now prices with the store's current prices and stock. Links open the store.</div>
+            <div className="bell-foot">Sales cover the whole store, accessories and clothing included. The rest is compared with the workshop's catalog of {CATALOG_DATE}; the workshop now prices with the store's current prices and stock. Links open the store.</div>
           )}
         </div>
       )}

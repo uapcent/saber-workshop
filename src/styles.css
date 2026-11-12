@@ -213,6 +213,8 @@ input[type=color] {
 .p-out { background: rgba(227, 164, 76, .14); color: var(--warn); }
 .p-coat { background: rgba(207, 169, 85, .14); color: var(--accent); }
 .p-old { background: rgba(155, 158, 166, .16); color: #c3c6cc; }
+.p-sale { background: rgba(98, 195, 147, .22); color: var(--ok); }
+.p-limited { background: rgba(162, 89, 255, .16); color: #c4a1ff; }
 .warnline {
   margin-top: 6px; font-size: 12px; color: var(--warn); padding: 5px 8px;
   border-left: 2px solid var(--warn); background: rgba(227, 164, 76, .07); border-radius: 0 6px 6px 0;

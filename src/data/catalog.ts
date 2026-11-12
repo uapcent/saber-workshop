@@ -57,6 +57,10 @@ export interface Listing {
   was?: number;
   /** Live data only: false when the store no longer lists the product. */
   listed?: boolean;
+  /** Live data only: the regular price, when the store has the product on sale at `price`. */
+  regular?: number;
+  /** Live data only: in the store's Limited Edition category. */
+  limited?: boolean;
 }
 
 /** When the built-in catalog was read from the store. */
@@ -97,16 +101,23 @@ export const SNAPSHOT: Record<string, Record<string, Readonly<Listing>>> = Objec
 /** The catalog the app prices with: the snapshot, updated with live store data once it arrives. */
 export const CATALOG: Record<string, Record<string, Listing>> = structuredClone(SNAPSHOT);
 
-/** Live store data per product id: [price €, in stock]. */
-export type LivePrices = Record<number, [price: number, inStock: boolean]>;
+/** Live store data per product id. `regular` is set only while the product is on sale. */
+export type LivePrices = Record<number, { price: number; inStock: boolean; regular?: number; limited?: boolean }>;
 
-/** Overlays live store prices and stock on CATALOG (products missing from `live` are marked unlisted). */
+/** Overlays live store prices, stock, sales and tags on CATALOG (products missing from `live` are marked unlisted). */
 export function applyLivePrices(live: LivePrices) {
   for (const [part, listings] of Object.entries(SNAPSHOT)) {
     for (const [finish, base] of Object.entries(listings)) {
       const now = live[base.id];
       CATALOG[part][finish] = now
-        ? { ...base, price: now[0], inStock: now[1], ...(Math.abs(now[0] - base.price) > 0.005 && { was: base.price }) }
+        ? {
+            ...base,
+            price: now.price,
+            inStock: now.inStock,
+            ...(Math.abs(now.price - base.price) > 0.005 && { was: base.price }),
+            ...(now.regular !== undefined && { regular: now.regular }),
+            ...(now.limited && { limited: true }),
+          }
         : { ...base, inStock: false, listed: false };
     }
   }
