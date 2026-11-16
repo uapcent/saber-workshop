@@ -63,6 +63,10 @@ export interface PartModel {
   facets?: number[];
   grooves?: number[];
   mark?: 'star' | 'tribe';
+  /** Hand-painted artwork over the finish: the Ronin's lightning-like cracks. */
+  pattern?: 'ronin';
+  /** Not sold on its own: priced as this model of the same kind (bought plain, then painted). */
+  base?: string;
   /** Lines and holes drawn inside the outline (from data/details.json). */
   details?: SurfaceDetails;
 }

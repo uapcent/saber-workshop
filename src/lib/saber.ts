@@ -20,12 +20,25 @@ export function finishOf(key: FinishKey): Finish {
 export type PartStatus =
   | { kind: 'legacy' }
   | ({ kind: 'store' } & Listing)
-  /** Not sold in this finish: buy the aluminum base (if sold) and have it coated. */
-  | { kind: 'coat'; base: Listing | null };
+  /**
+   * Not sold in this finish: buy the aluminum base (if sold) and have it coated. For a painted pattern
+   * (`pattern`), the base is the plain part, in the same finish when the store sells it (`coated` false).
+   */
+  | { kind: 'coat'; base: Listing | null; pattern?: 'ronin'; coated?: boolean };
+
+/** Store listings that price a model: its own, or its plain base model's. */
+export function listingsFor(kind: PartKind, model: string): Record<string, Listing> {
+  return CATALOG[`${kind}.${MODELS[kind][model].base ?? model}`] ?? {};
+}
 
 export function partStatus(kind: PartKind, { model, finish }: PartChoice): PartStatus {
-  if (MODELS[kind][model].legacy) return { kind: 'legacy' };
-  const listings = CATALOG[`${kind}.${model}`] ?? {};
+  const m = MODELS[kind][model];
+  if (m.legacy) return { kind: 'legacy' };
+  const listings = listingsFor(kind, model);
+  if (m.pattern) {
+    const plain = listings[finish];
+    return { kind: 'coat', base: plain ?? listings.aluminum ?? null, pattern: m.pattern, coated: !plain };
+  }
   const listing = listings[finish];
   if (listing) return { kind: 'store', ...listing };
   return { kind: 'coat', base: listings.aluminum ?? null };
@@ -190,9 +203,9 @@ export function warnings(s: Saber, t: Totals = totals(s)): string[] {
  */
 const CODE_FINISHES = ['aluminum', 'dark', 'stellar', 'blood', 'cobalt', 'viridian', 'violet', 'sideral', 'lunar', 'solar', 'ygg', 'cremisi', 'fume', 'giada', 'magma', 'zaffiro', 'white', 'bone', 'gold', 'brass', 'rose', 'bronze', 'gunmetal', 'gloss'];
 const CODE_MODELS: Record<PartKind, string[]> = {
-  emitter: ['evo', 'nxt', 'evo2', 'x2', 'sse1', 'sse2', 'sse3', 'artiglio'],
-  body: ['evo', 'mini', 'sse1', 'sse3', 'sse2'],
-  pommel: ['evo', 'mini', 'adaptor', 'sse1', 'sse3std', 'sse3extra', 'sse2'],
+  emitter: ['evo', 'nxt', 'evo2', 'x2', 'sse1', 'sse2', 'sse3', 'artiglio', 'ronin'],
+  body: ['evo', 'mini', 'sse1', 'sse3', 'sse2', 'ronin'],
+  pommel: ['evo', 'mini', 'adaptor', 'sse1', 'sse3std', 'sse3extra', 'sse2', 'ronin'],
   coupler: ['classic', 'heavy', 'evo', 'maori'],
   ring: ['plain', 'thin', 'logo', 'tribe'],
 };

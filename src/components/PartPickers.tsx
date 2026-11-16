@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { CATALOG, FINISHES, type Listing } from '../data/catalog';
+import { FINISHES, RONIN_SABER, productUrl, type Listing } from '../data/catalog';
 import { MODELS } from '../data/models';
-import { customColor, eur, finishOf, isCustomColor, type PartStatus } from '../lib/saber';
+import { customColor, eur, finishOf, isCustomColor, listingsFor, type PartStatus } from '../lib/saber';
 import type { FinishKey, PartKind } from '../types';
 
 const CUSTOM = '__custom__';
@@ -63,7 +63,8 @@ export function FinishSelect({
 }) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
-  const listings = CATALOG[`${kind}.${model}`] ?? {};
+  const listings = listingsFor(kind, model);
+  const painted = !!MODELS[kind][model].pattern;
   const finishKeys = Object.keys(FINISHES);
   const otherStoreColors = finishKeys.filter((k) => FINISHES[k].store && !listings[k]);
   const coatings = finishKeys.filter((k) => !FINISHES[k].store);
@@ -105,7 +106,7 @@ export function FinishSelect({
       </div>
       {open && (
         <div className="finish-list" role="listbox" aria-label="Finishes">
-          <div className="finish-group">Sold for this part</div>
+          <div className="finish-group">{painted ? 'Plain part sold in, paint the cracks yourself' : 'Sold for this part'}</div>
           {Object.entries(listings).map(([k, l]) => option(k, listingNote(l)))}
           {otherStoreColors.length > 0 && <div className="finish-group">Store colors, not sold for this part</div>}
           {otherStoreColors.map((k) => option(k, 'coat'))}
@@ -151,6 +152,7 @@ export function StoreTags({ status }: { status: PartStatus }) {
 
 export function StatusPill({ status }: { status: PartStatus }) {
   if (status.kind === 'legacy') return <span className="pill p-old">Discontinued</span>;
+  if (status.kind === 'coat' && status.pattern) return <span className="pill p-coat">{status.coated ? 'Coat and paint' : 'Paint it'}</span>;
   if (status.kind === 'coat') return <span className="pill p-coat">Coat it</span>;
   if (status.listed === false) return <span className="pill p-out">Not listed</span>;
   return status.inStock ? <span className="pill p-ok">In stock</span> : <span className="pill p-out">Out of stock</span>;
@@ -168,7 +170,20 @@ export function StatusLine({ status }: { status: PartStatus }) {
       ) : (
         eur(status.price)
       );
-  else if (status.base)
+  else if (status.pattern) {
+    const base = status.base
+      ? `Plain part${status.coated ? ' in aluminum, to coat' : ''}: ${eur(status.base.price)}${status.base.inStock ? '' : ' (out of stock)'}. `
+      : '';
+    detail = (
+      <>
+        {base}The cracks only come on the{' '}
+        <a href={productUrl(RONIN_SABER.id)} target="_blank" rel="noopener">
+          {RONIN_SABER.name}
+        </a>
+        ; otherwise paint them by hand.
+      </>
+    );
+  } else if (status.base)
     detail = `Not sold in this finish. Base part in aluminum ${eur(status.base.price)}${status.base.inStock ? '' : ' (out of stock)'}`;
   else detail = 'Not sold in this finish';
   return (

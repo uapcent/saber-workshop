@@ -25,7 +25,7 @@ interface Props {
 
 function priceOf(st: PartStatus): string {
   if (st.kind === 'store') return eur(st.price);
-  if (st.kind === 'coat') return 'Coat';
+  if (st.kind === 'coat') return st.pattern ? 'Paint' : 'Coat';
   return '—';
 }
 
@@ -171,7 +171,7 @@ export function PartsPanel({ saber, totals: t, selected, onSelect, dispatch }: P
         {t.toCoat > 0 && (
           <div className="small">
             <span>
-              {t.toCoat} part{t.toCoat > 1 ? 's' : ''} to coat, aluminum bases
+              {t.toCoat} part{t.toCoat > 1 ? 's' : ''} to coat or paint, bases
             </span>
             <span>{eur(t.bases)}</span>
           </div>

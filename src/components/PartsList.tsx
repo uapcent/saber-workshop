@@ -35,7 +35,7 @@ function Row({ row }: { row: PartRow }) {
     link = <StoreLink id={st.id}>view</StoreLink>;
   } else if (st.kind === 'coat' && st.base) {
     price = <span className="small">base {eur(st.base.price * q)}</span>;
-    link = <StoreLink id={st.base.id}>base part</StoreLink>;
+    link = <StoreLink id={st.base.id}>{st.pattern ? 'plain part' : 'base part'}</StoreLink>;
   }
   return (
     <tr className={blocked ? 'row-unavailable' : undefined}>
@@ -65,6 +65,12 @@ function unavailable(row: PartRow): string | null {
   if (st.kind === 'store') {
     if (st.listed === false) return `${name} in ${finishOf(row.choice.finish).name}: no longer listed in the store.`;
     if (!st.inStock) return `${name} in ${finishOf(row.choice.finish).name}: out of stock.`;
+    return null;
+  }
+  if (st.pattern) {
+    if (!st.base) return `${name}: the plain part to paint is not sold.`;
+    if (st.base.listed === false) return `${name}: the plain part to paint is no longer listed in the store.`;
+    if (!st.base.inStock) return `${name}: the plain part to paint is out of stock.`;
     return null;
   }
   if (!st.base) return `${name}: not sold in this finish, and there is no aluminum base to coat.`;
@@ -133,7 +139,7 @@ export function PartsList({ saber, totals: t }: { saber: Saber; totals: Totals }
           </tr>
           {t.toCoat > 0 && (
             <tr>
-              <td colSpan={3}>Aluminum bases to coat ({t.toCoat}), coating cost not included</td>
+              <td colSpan={3}>Bases to coat or paint ({t.toCoat}), coating and painting not included</td>
               <td className="num">{eur(t.bases)}</td>
             </tr>
           )}
@@ -146,7 +152,7 @@ export function PartsList({ saber, totals: t }: { saber: Saber; totals: Totals }
           </a>
           <span className="small">
             Opens the store's checkout with the parts already in it
-            {order.bases > 0 && `, including ${order.bases === 1 ? 'the aluminum base' : `${order.bases} aluminum bases`} to coat`}
+            {order.bases > 0 && `, including ${order.bases === 1 ? 'the base part' : `${order.bases} base parts`} to coat or paint`}
             {problems.length > 0 && '. Parts that can’t be bought now are left out'}. It may replace what is already in your
             lamadiluce.it cart.
           </span>

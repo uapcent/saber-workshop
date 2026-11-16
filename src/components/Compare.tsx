@@ -59,7 +59,7 @@ export function Compare({ slots, totals, active, dispatch }: Props) {
                   {shown.map((s) => {
                     const t = s.totals;
                     const notes = [
-                      t.toCoat && `${t.toCoat} to coat (bases ${eur(t.bases)})`,
+                      t.toCoat && `${t.toCoat} to coat or paint (bases ${eur(t.bases)})`,
                       t.outOfStock && `${t.outOfStock} out of stock`,
                       t.discontinued && `${t.discontinued} discontinued`,
                       warnings(s.saber, t).length && 'see warnings',

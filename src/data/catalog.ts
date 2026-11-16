@@ -123,4 +123,7 @@ export function applyLivePrices(live: LivePrices) {
   }
 }
 
+/** Polaris EVO Sideral Ronin Limited Edition: the whole saber (with Anima), the only way the store sells the Ronin cracks. */
+export const RONIN_SABER = { id: 4920, name: 'Polaris EVO Sideral Ronin (limited, whole saber)' };
+
 export const productUrl = (id: number) => `https://lamadiluce.it/?post_type=product&p=${id}`;

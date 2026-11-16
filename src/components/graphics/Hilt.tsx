@@ -1,8 +1,9 @@
 import { MODELS } from '../../data/models';
 import { darken, lighten, luminance, mix } from '../../lib/color';
-import { coneShading, outlinePath, radiusAt, shadingStops, starPath, turnedEdges } from '../../lib/geometry';
+import { coneShading, outlinePath, radiusAt, roninCracks, shadingStops, starPath, turnedEdges } from '../../lib/geometry';
 import { finishOf } from '../../lib/saber';
-import type { Mask, PartChoice, PartKind, Saber } from '../../types';
+import { useMemo } from 'react';
+import type { Mask, PartChoice, PartKind, Profile, Saber } from '../../types';
 
 interface PartShapeProps {
   id: string;
@@ -159,6 +160,7 @@ function PartShape({ id, kind, choice, x0, mask, glow, filters, interaction, par
             <rect x={x0 + x - h / 2 + 0.3} y={y + w / 2 - 0.45} width={Math.max(0, h - 0.6)} height={0.3} rx={0.15} fill={shine(0.25)} />
           </g>
         ))}
+        {m.pattern === 'ronin' && <RoninCracks profile={profile} len={m.len} x0={x0} seed={RONIN_SEED[kind] ?? 1} />}
       </g>
       <path d={d} fill="none" stroke="rgba(0,0,0,.5)" strokeWidth={0.35} strokeLinejoin="round" />
       {m.facets?.map((x) => edge(x, 'rgba(0,0,0,.38)', 'rgba(255,255,255,.10)'))}
@@ -182,6 +184,27 @@ function PartShape({ id, kind, choice, x0, mask, glow, filters, interaction, par
       )}
       {clickable && <path className="hilt-part-hover" d={d} />}
       {selected && <path className="hilt-part-outline" d={d} />}
+    </g>
+  );
+}
+
+/** One pattern per part kind, so the emitter, body and pommel each have their own cracks. */
+const RONIN_SEED: Partial<Record<PartKind, number>> = { emitter: 7, body: 21, pommel: 13 };
+
+/** Silver hand-painted cracks over the finish, with a faint dark edge so they read on light finishes too. */
+function RoninCracks({ profile, len, x0, seed }: { profile: Profile; len: number; x0: number; seed: number }) {
+  const cracks = useMemo(() => roninCracks(profile, len, seed), [profile, len, seed]);
+  return (
+    <g fill="none" strokeLinecap="round" strokeLinejoin="round">
+      {cracks.map(({ points, width }, i) => {
+        const pts = points.map(([x, y]) => `${(x0 + x).toFixed(2)},${y.toFixed(2)}`).join(' ');
+        return (
+          <g key={i}>
+            <polyline points={pts} stroke="rgba(0,0,0,.35)" strokeWidth={width + 0.3} />
+            <polyline points={pts} stroke="#eceef1" strokeWidth={width} />
+          </g>
+        );
+      })}
     </g>
   );
 }

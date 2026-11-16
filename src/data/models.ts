@@ -101,6 +101,15 @@ const EVO_COUPLER_DETAILS: SurfaceDetails = {
   ),
 };
 
+/**
+ * Ronin (Polaris EVO Sideral Ronin Limited Edition, p. 4920): EVO parts with kintsugi-style cracks hand-painted
+ * in silver over the anodizing. The store sells it only as a whole saber in Sideral Dust; other colors are
+ * plain EVO parts painted by their owners. Same shape and weight as the plain parts.
+ */
+function ronin(plain: PartModel, name: string): PartModel {
+  return { ...plain, name, pattern: 'ronin', base: 'evo' };
+}
+
 /*
  * Weights (g, empty) are the ones in the lamadiluce.it product descriptions, 12 Nov 2026. Parts of the same
  * kind and shape are taken to weigh the same: the logo ring as the 10 mm plain and Tribe rings (3.9 to 4.2 g),
@@ -109,6 +118,7 @@ const EVO_COUPLER_DETAILS: SurfaceDetails = {
 export const MODELS: Record<PartKind, Record<string, PartModel>> = {
   emitter: {
     evo: traced('emitter.evo', 'EVO Emitter', { weight: 66 }),
+    ronin: ronin(traced('emitter.evo', '', { weight: 66 }), 'EVO Emitter Ronin (limited)'),
     nxt: traced('emitter.nxt', 'NXT Emitter', { approx: true, details: NXT_EMITTER_DETAILS, weight: 75 }),
     evo2: traced('emitter.evo2', 'EVO2 Emitter', { approx: true, details: EVO2_EMITTER_DETAILS, weight: 58 }),
     x2: traced('emitter.x2', 'X2 Emitter', { legacy: true }),
@@ -119,6 +129,7 @@ export const MODELS: Record<PartKind, Record<string, PartModel>> = {
   },
   body: {
     evo: traced('body.evo', 'EVO Main Body', { details: EVO_BODY_DETAILS, weight: 120 }),
+    ronin: ronin(traced('body.evo', '', { details: EVO_BODY_DETAILS, weight: 120 }), 'EVO Main Body Ronin (limited)'),
     // The store gives 100 g for the aluminum Mini body and 102 g for the colored ones.
     mini: traced('body.mini', 'EVO Mini Main Body', { approx: true, details: EVO_MINI_BODY_DETAILS, weight: 101 }),
     sse1: traced('body.sse1', 'SSe-1 Main Body', { legacy: true }),
@@ -127,6 +138,7 @@ export const MODELS: Record<PartKind, Record<string, PartModel>> = {
   },
   pommel: {
     evo: traced('pommel.evo', 'EVO Pommel', { weight: 66 }),
+    ronin: ronin(traced('pommel.evo', '', { weight: 66 }), 'EVO Pommel Ronin (limited)'),
     mini: traced('pommel.mini', 'EVO Mini Pommel', { approx: true, weight: 38 }),
     adaptor: traced('pommel.adaptor', 'Pommel Adaptor', { profileExtra: PROFILES['pommel.adaptor.extra'] }),
     sse1: traced('pommel.sse1', 'SSe-1 Pommel', { legacy: true }),

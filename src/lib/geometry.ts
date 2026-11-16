@@ -95,6 +95,64 @@ export function shadingStops(f: Finish): [number, string][] {
 }
 
 /** A document-unique id that is safe inside SVG `url(#…)` references. */
+/** Small seeded random generator (mulberry32), so a part's pattern is the same on every render. */
+function seeded(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+export interface Crack {
+  points: [number, number][];
+  width: number;
+}
+
+/**
+ * Ronin cracks: jagged, lightning-like veins running mostly along the part, with short branches and a few
+ * loose flecks, as on the store photos. x from 0 to `len` (mm), kept inside the outline.
+ */
+export function roninCracks(profile: Profile, len: number, seed: number): Crack[] {
+  const rand = seeded(seed);
+  const cracks: Crack[] = [];
+  const clampY = (x: number, y: number) => {
+    const r = radiusAt(profile, x) * 0.88;
+    return Math.max(-r, Math.min(r, y));
+  };
+  const bolt = (x: number, y: number, dir: 1 | -1, steps: number, width: number) => {
+    const points: [number, number][] = [[x, clampY(x, y)]];
+    let drift = (rand() - 0.5) * 1.6;
+    for (let i = 0; i < steps; i++) {
+      x += dir * (0.8 + rand() * 2.4);
+      if (x < 0.6 || x > len - 0.6) break;
+      // Small sideways jitter on every step, with a slowly changing lean: reads as a crack, not a scribble.
+      y = clampY(x, y + drift + (rand() - 0.5) * 2.6);
+      drift = Math.max(-1.5, Math.min(1.5, drift + (rand() - 0.5) * 0.7));
+      points.push([x, y]);
+      if (width > 0.25 && rand() < 0.14) bolt(x, y, rand() < 0.75 ? dir : (-dir as 1 | -1), 2 + Math.floor(rand() * 4), width * 0.65);
+    }
+    if (points.length > 1) cracks.push({ points, width });
+  };
+  const veins = 1 + Math.round(len / 70 + rand());
+  for (let i = 0; i < veins; i++) {
+    const dir = rand() < 0.5 ? 1 : -1;
+    const start = len * rand() * 0.35;
+    bolt(dir === 1 ? start : len - start, (rand() - 0.5) * 24, dir, Math.round((len * (0.35 + rand() * 0.55)) / 2), 0.34);
+  }
+  // Loose flecks of paint.
+  const flecks = Math.round(len / 25);
+  for (let i = 0; i < flecks; i++) {
+    const x = 1 + rand() * (len - 2);
+    const y = clampY(x, (rand() - 0.5) * 30);
+    cracks.push({ points: [[x, y], [x + 0.3 + rand() * 0.8, y + (rand() - 0.5) * 0.6]], width: 0.3 });
+  }
+  return cracks;
+}
+
 export function useSvgId(): string {
   return 'svg' + useId().replace(/[^a-zA-Z0-9_-]/g, '');
 }

@@ -19,7 +19,7 @@ export function SaberCard({ saber, totals: t, interaction }: Props) {
     STYLES[saber.style].name,
     `${cm(t.length)} cm · ${lengthClass(t.length, saber.style).name}`,
     `${eur(t.store)} in store parts`,
-    t.toCoat && `${plural(t.toCoat, 'part')} to coat`,
+    t.toCoat && `${plural(t.toCoat, 'part')} to coat or paint`,
     t.discontinued && `${t.discontinued} discontinued`,
     t.outOfStock && `${t.outOfStock} out of stock`,
   ].filter(Boolean);
